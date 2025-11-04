@@ -1,8 +1,8 @@
-from fastapi import APIRouter, Request, Depends, Form, HTTPException
+from fastapi import APIRouter, Request, Depends, Form
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
-from src.services import subscriber_auth_service, subscriber_service
+from src.services import subscriber_auth_service, subscriber_service, contract_service
 from src.auth.dependencies import require_subscriber_login, get_current_subscriber
 
 router = APIRouter(prefix="/subscriber", tags=["Subscriber Cabinet"])
@@ -12,7 +12,7 @@ templates = Jinja2Templates(directory="templates")
 # Главная страница кабинета (теперь это дашборд)
 @router.get("/cabinet", response_class=HTMLResponse, dependencies=[Depends(require_subscriber_login)])
 async def subscriber_cabinet_dashboard(request: Request, current_subscriber: dict = Depends(get_current_subscriber)):
-    contracts = await subscriber_auth_service.get_subscriber_contracts(current_subscriber['subscriber_id'])
+    contracts = await contract_service.fetch_contracts_by_subscriber_id(current_subscriber['subscriber_id'])
     # Обновляем данные абонента на случай, если баланс изменился
     subscriber_info = await subscriber_service.fetch_subscriber_by_id(current_subscriber['subscriber_id'])
 

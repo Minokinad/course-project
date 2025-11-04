@@ -25,22 +25,6 @@ async def verify_subscriber_credentials(phone: str, password: str):
     return subscriber
 
 
-async def get_subscriber_contracts(subscriber_id: int):
-    """
-    Получает все договоры для конкретного абонента (без изменений).
-    """
-    conn = await get_db_connection()
-    query = """
-    SELECT c.contract_id, c.start_date, c.status, s.name as service_name, s.price
-    FROM contracts c
-    JOIN services s ON c.service_id = s.service_id
-    WHERE c.subscriber_id = $1
-    ORDER BY c.start_date DESC
-    """
-    contracts = await conn.fetch(query, subscriber_id)
-    await conn.close()
-    return contracts
-
 async def get_subscriber_payments(subscriber_id: int):
     """
     Получает историю платежей для конкретного абонента.

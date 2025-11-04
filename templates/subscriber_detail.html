@@ -1,10 +1,69 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>$Title$</title>
-</head>
-<body>
-$END$
-</body>
-</html>
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3">Карточка абонента</h1>
+    <a href="/subscribers" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> К списку абонентов
+    </a>
+</div>
+
+<div class="row">
+    <!-- Блок с информацией -->
+    <div class="col-md-7">
+        <div class="card">
+            <div class="card-header">
+                {{ subscriber.full_name }} (ID: {{ subscriber.subscriber_id }})
+            </div>
+            <ul class="list-group list-group-flush">
+                <li class="list-group-item"><strong>Адрес:</strong> {{ subscriber.address }}</li>
+                <li class="list-group-item"><strong>Телефон:</strong> {{ subscriber.phone_number }}</li>
+            </ul>
+        </div>
+    </div>
+    <!-- Блок баланса -->
+    <div class="col-md-5">
+        <div class="card">
+            <div class="card-header">
+                Баланс
+            </div>
+            <div class="card-body">
+                <h2 class="card-title text-center mb-0">
+                    <span class="badge {% if subscriber.balance >= 0 %}bg-success{% else %}bg-danger{% endif %} fs-4">
+                        {{ "%.2f"|format(subscriber.balance) }} BYN
+                    </span>
+                </h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<h3 class="mt-5">Договоры и услуги абонента</h3>
+{% if contracts %}
+    <table class="table table-hover">
+        <thead>
+        <tr>
+            <th>№ Договора</th><th>Услуга</th><th>Стоимость</th><th>Дата начала</th><th>Статус</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for contract in contracts %}
+            <tr>
+                <td>{{ contract.contract_id }}</td>
+                <td>{{ contract.service_name }}</td>
+                <td>{{ "%.2f"|format(contract.price) }} BYN/мес.</td>
+                <td>{{ contract.start_date.strftime('%d.%m.%Y') }}</td>
+                <td>
+                    <span class="badge {% if contract.status == 'Активен' %}bg-success{% elif contract.status == 'Приостановлен' %}bg-warning{% else %}bg-secondary{% endif %}">
+                        {{ contract.status }}
+                    </span>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+{% else %}
+    <p class="alert alert-info">У абонента нет активных договоров.</p>
+{% endif %}
+
+{% endblock %}

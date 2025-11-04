@@ -1,10 +1,40 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>$Title$</title>
-</head>
-<body>
-$END$
-</body>
-</html>
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Список оборудования</h1>
+</div>
+
+<table class="table table-striped table-hover">
+    <thead>
+    <tr>
+        <th>ID</th>
+        <th>Тип</th>
+        <th>Серийный номер</th>
+        <th>Статус</th>
+        <th>Привязан к абоненту</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for item in equipment %}
+        <tr>
+            <td>{{ item.equipment_id }}</td>
+            <td>{{ item.type }}</td>
+            <td>{{ item.serial_number }}</td>
+            <td>{{ item.status }}</td>
+            <td>
+                {% if item.subscriber_id %}
+                    <a href="/subscribers/{{ item.subscriber_id }}">{{ item.subscriber_name }}</a>
+                {% else %}
+                    <span class="text-muted">На складе</span>
+                {% endif %}
+            </td>
+        </tr>
+    {% else %}
+        <tr>
+            <td colspan="5" class="text-center">В системе нет зарегистрированного оборудования.</td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

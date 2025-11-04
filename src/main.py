@@ -3,7 +3,10 @@ from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from jose import JWTError, jwt
 
-from src.routers import subscribers_router, auth_router, cabinet_router
+from src.routers import (
+    subscribers_router, auth_router, cabinet_router,
+    service_router, equipment_router, contracts_router
+)
 from src.services.auth_service import get_employee_by_login
 from src.services.subscriber_service import fetch_subscriber_by_id
 from src.config import settings
@@ -11,7 +14,6 @@ from src.config import settings
 app = FastAPI(title="АИС Интернет-провайдера")
 
 
-# ... (middleware без изменений)
 @app.middleware("http")
 async def add_user_to_context(request: Request, call_next):
     token = request.cookies.get("access_token")
@@ -43,6 +45,9 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 app.include_router(auth_router.router)
 app.include_router(cabinet_router.router)
 app.include_router(subscribers_router.router)
+app.include_router(service_router.router)
+app.include_router(equipment_router.router)
+app.include_router(contracts_router.router)
 
 
 @app.get("/")

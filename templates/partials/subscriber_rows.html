@@ -6,14 +6,19 @@
     <td>{{ sub.phone_number }}</td>
     <td>{{ "%.2f"|format(sub.balance) }}</td>
     <td>
+        <a href="/subscribers/{{ sub.subscriber_id }}" class="btn btn-sm btn-outline-primary me-2" title="Просмотр">
+            <i class="bi bi-eye"></i>
+        </a>
+
         {% if request.state.user.role in ['Администратор', 'Менеджер'] %}
-        <a href="/subscribers/{{ sub.subscriber_id }}/edit" class="btn btn-sm btn-outline-secondary me-2">
+        <a href="/subscribers/{{ sub.subscriber_id }}/edit" class="btn btn-sm btn-outline-secondary me-2" title="Редактировать">
             <i class="bi bi-pencil"></i>
         </a>
         {% endif %}
 
         {% if request.state.user.role == 'Администратор' %}
         <button class="btn btn-sm btn-outline-danger"
+                title="Удалить"
                 hx-delete="/subscribers/{{ sub.subscriber_id }}"
                 hx-target="closest tr"
                 hx-swap="outerHTML"

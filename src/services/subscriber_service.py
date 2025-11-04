@@ -13,10 +13,17 @@ async def fetch_subscriber_by_id(sub_id: int):
     return row
 
 async def search_subscribers(query: str):
+    """
+    Ищет абонентов по ФИО, адресу или номеру телефона.
+    """
     conn = await get_db_connection()
     search_pattern = f"%{query}%"
     rows = await conn.fetch(
-        "SELECT * FROM subscribers WHERE full_name ILIKE $1 ORDER BY subscriber_id",
+        """
+        SELECT * FROM subscribers
+        WHERE full_name ILIKE $1 OR address ILIKE $1 OR phone_number ILIKE $1
+        ORDER BY subscriber_id
+        """,
         search_pattern
     )
     await conn.close()
@@ -38,7 +45,7 @@ async def update_subscriber(sub_id: int, full_name: str, address: str, phone: st
         SET full_name = $1, address = $2, phone_number = $3, balance = $4
         WHERE subscriber_id = $5
         """,
-        full_name, address, phone, sub_id
+        full_name, address, phone, balance, sub_id
     )
     await conn.close()
 

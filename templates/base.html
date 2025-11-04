@@ -28,7 +28,16 @@
                 <div class="collapse navbar-collapse">
                     <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                         <li class="nav-item">
-                            <a class="nav-link active" href="/subscribers">Абоненты</a>
+                            <a class="nav-link {% if active_page == 'subscribers' %}active{% endif %}" href="/subscribers">Абоненты</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if active_page == 'contracts' %}active{% endif %}" href="/contracts">Договоры</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if active_page == 'services' %}active{% endif %}" href="/services">Услуги</a>
+                        </li>
+                         <li class="nav-item">
+                            <a class="nav-link {% if active_page == 'equipment' %}active{% endif %}" href="/equipment">Оборудование</a>
                         </li>
                     </ul>
                     <div class="d-flex text-white align-items-center">
