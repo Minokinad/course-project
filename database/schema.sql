@@ -63,3 +63,11 @@ CREATE TABLE notifications (
     type            VARCHAR(50) NOT NULL,
     sent_date       TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE system_logs (
+    log_id SERIAL PRIMARY KEY,
+    timestamp TIMESTAMPTZ DEFAULT NOW(),
+    level VARCHAR(20) NOT NULL,
+    message TEXT NOT NULL,
+    user_login VARCHAR(255)
+);
