@@ -1,13 +1,18 @@
-from fastapi import APIRouter, Request, Form, Depends
-from fastapi.responses import HTMLResponse, RedirectResponse
+import json
+from datetime import date, datetime
+
+from fastapi import APIRouter, Request, Form, Depends, UploadFile, File, HTTPException
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 
 from src.services import subscriber_service, contract_service
 from src.auth.dependencies import require_manager, require_admin, require_tech
 
-# Защищаем все роуты в этом файле, требуя аутентификации
 router = APIRouter(prefix="/subscribers", tags=["Subscribers"], dependencies=[Depends(require_tech)])
 templates = Jinja2Templates(directory="templates")
+
+
+# ... (остальные эндпоинты без изменений)
 
 @router.get("", response_class=HTMLResponse)
 async def list_subscribers_page(request: Request):
@@ -15,7 +20,8 @@ async def list_subscribers_page(request: Request):
     return templates.TemplateResponse("subscribers.html", {
         "request": request,
         "subscribers": subscribers,
-        "active_page": "subscribers"
+        "active_page": "subscribers",
+        "message": request.query_params.get("message") # Для сообщений после импорта
     })
 
 @router.post("/search", response_class=HTMLResponse)
@@ -29,10 +35,13 @@ async def new_subscriber_form(request: Request):
 
 @router.post("/new", dependencies=[Depends(require_manager)])
 async def create_subscriber_form(
+    request: Request,
     full_name: str = Form(...), address: str = Form(""),
     phone_number: str = Form(""), balance: float = Form(0.0)
 ):
-    await subscriber_service.create_subscriber(full_name, address, phone_number, balance)
+    await subscriber_service.create_subscriber(
+        full_name, address, phone_number, balance, user_login=request.state.user_login
+    )
     return RedirectResponse(url="/subscribers", status_code=303)
 
 
@@ -65,13 +74,68 @@ async def edit_subscriber_form(request: Request, sub_id: int):
 
 @router.post("/{sub_id}/edit", dependencies=[Depends(require_manager)])
 async def update_subscriber_form(
+    request: Request,
     sub_id: int, full_name: str = Form(...), address: str = Form(""),
     phone_number: str = Form(""), balance: float = Form(0.0)
 ):
-    await subscriber_service.update_subscriber(sub_id, full_name, address, phone_number, balance)
+    await subscriber_service.update_subscriber(
+        sub_id, full_name, address, phone_number, balance, user_login=request.state.user_login
+    )
     return RedirectResponse(url="/subscribers", status_code=303)
 
 @router.delete("/{sub_id}", response_class=HTMLResponse, dependencies=[Depends(require_admin)])
-async def delete_subscriber_htmx(sub_id: int):
-    await subscriber_service.delete_subscriber(sub_id)
+async def delete_subscriber_htmx(request: Request, sub_id: int):
+    await subscriber_service.delete_subscriber(sub_id, user_login=request.state.user_login)
     return HTMLResponse(content="", status_code=200)
+
+
+# --- Экспорт и Импорт ---
+
+# Вспомогательная функция для конвертации данных в JSON
+def json_converter(o):
+    if isinstance(o, (datetime, date)):
+        return o.isoformat()
+    return str(o) # На случай других типов
+
+@router.get("/export/json", dependencies=[Depends(require_admin)])
+async def export_subscribers_to_json():
+    subscribers = await subscriber_service.fetch_all_subscribers()
+    # Преобразуем записи из БД в список словарей
+    subscribers_list = [dict(sub) for sub in subscribers]
+
+    # Используем json.dumps с кастомным конвертером для дат
+    json_data = json.dumps(subscribers_list, default=json_converter, indent=4, ensure_ascii=False)
+
+    return JSONResponse(
+        content=json.loads(json_data),
+        headers={"Content-Disposition": f"attachment; filename=subscribers_{date.today()}.json"}
+    )
+
+
+@router.get("/import/json", response_class=HTMLResponse, dependencies=[Depends(require_admin)])
+async def import_json_form(request: Request):
+    """
+    Страница с формой для загрузки JSON файла.
+    """
+    return templates.TemplateResponse("import_form.html", {
+        "request": request,
+        "active_page": "subscribers",
+        "import_url": "/subscribers/import/json"
+    })
+
+@router.post("/import/json", dependencies=[Depends(require_admin)])
+async def import_subscribers_from_json(request: Request, file: UploadFile = File(...)):
+    if not file.filename.endswith(".json"):
+        raise HTTPException(status_code=400, detail="Неверный формат файла. Требуется JSON.")
+
+    content = await file.read()
+    try:
+        data = json.loads(content)
+        if not isinstance(data, list):
+            raise ValueError()
+    except (json.JSONDecodeError, ValueError):
+        raise HTTPException(status_code=400, detail="Не удалось прочитать JSON или формат данных некорректен (ожидается список абонентов).")
+
+    count = await subscriber_service.import_subscribers_from_list(data, user_login=request.state.user_login)
+    message = f"Успешно импортировано {count} абонентов."
+    return RedirectResponse(url=f"/subscribers?message={message}", status_code=303)

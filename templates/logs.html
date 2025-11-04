@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Системный журнал</h1>
+</div>
+
+<p>Отображены последние 100 записей.</p>
+
+<table class="table table-sm table-striped">
+    <thead>
+    <tr>
+        <th style="width: 15%;">Время</th>
+        <th style="width: 10%;">Уровень</th>
+        <th style="width: 15%;">Пользователь</th>
+        <th>Сообщение</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for log in logs %}
+        <tr>
+            <td>{{ log.timestamp.strftime('%d.%m.%Y %H:%M:%S') }}</td>
+            <td>
+                {% if log.level == 'INFO' %}
+                    <span class="badge bg-primary">{{ log.level }}</span>
+                {% elif log.level == 'WARNING' %}
+                    <span class="badge bg-warning text-dark">{{ log.level }}</span>
+                {% else %}
+                     <span class="badge bg-secondary">{{ log.level }}</span>
+                {% endif %}
+            </td>
+            <td>{{ log.user_login }}</td>
+            <td>{{ log.message }}</td>
+        </tr>
+    {% else %}
+        <tr>
+            <td colspan="4" class="text-center">Журнал пуст.</td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

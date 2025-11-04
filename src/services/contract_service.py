@@ -1,7 +1,8 @@
 from datetime import date
 from src.db.connection import get_db_connection
+from src.services.log_service import log_action
 
-
+# ... (первые две функции без изменений)
 async def fetch_contracts_by_subscriber_id(subscriber_id: int):
     """
     Получает все договоры для конкретного абонента.
@@ -38,29 +39,34 @@ async def fetch_all_contracts():
     await conn.close()
     return contracts
 
-async def create_contract(subscriber_id: int, service_id: int, start_date: date):
+
+async def create_contract(subscriber_id: int, service_id: int, start_date: date, user_login: str):
     """
     Создает новый договор со статусом "Ожидает активации".
     """
     conn = await get_db_connection()
-    await conn.execute(
+    new_contract_id = await conn.fetchval(
         """
         INSERT INTO contracts (subscriber_id, service_id, start_date, status)
         VALUES ($1, $2, $3, 'Ожидает активации')
+        RETURNING contract_id
         """,
         subscriber_id, service_id, start_date
     )
     await conn.close()
+    await log_action(
+        "INFO", f"Создан новый договор ID: {new_contract_id} для абонента ID: {subscriber_id}.", user_login
+    )
 
-async def update_contract_status(contract_id: int, new_status: str):
+async def update_contract_status(contract_id: int, new_status: str, user_login: str):
     """
     Обновляет статус указанного договора.
     """
-    # Проверка на допустимые статусы для безопасности
     allowed_statuses = ['Активен', 'Приостановлен', 'Расторгнут']
     if new_status not in allowed_statuses:
-        # В реальном приложении здесь лучше выбросить исключение или вернуть ошибку
-        print(f"Попытка установить недопустимый статус: {new_status}")
+        await log_action(
+            "WARNING", f"Попытка установить недопустимый статус '{new_status}' для договора ID: {contract_id}.", user_login
+        )
         return
 
     conn = await get_db_connection()
@@ -69,6 +75,9 @@ async def update_contract_status(contract_id: int, new_status: str):
         new_status, contract_id
     )
     await conn.close()
+    await log_action(
+        "INFO", f"Статус договора ID: {contract_id} изменен на '{new_status}'.", user_login
+    )
 
 
 async def fetch_all_subscribers_for_selection():
@@ -85,6 +94,6 @@ async def fetch_all_services_for_selection():
     Получает ID и название всех услуг для использования в выпадающих списках.
     """
     conn = await get_db_connection()
-    rows = await conn.fetch("SELECT service_id, name, price FROM services ORDER BY name")
+    rows = await conn.fetch("SELECT service_id, name, price FROM services WHERE status = 'Активна' ORDER BY name")
     await conn.close()
     return rows

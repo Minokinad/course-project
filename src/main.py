@@ -5,7 +5,8 @@ from jose import JWTError, jwt
 
 from src.routers import (
     subscribers_router, auth_router, cabinet_router,
-    service_router, equipment_router, contracts_router
+    service_router, equipment_router, contracts_router,
+    employees_router, reports_router, logs_router  # Добавлены новые роутеры
 )
 from src.services.auth_service import get_employee_by_login
 from src.services.subscriber_service import fetch_subscriber_by_id
@@ -35,7 +36,11 @@ async def add_user_to_context(request: Request, call_next):
         except (JWTError, ValueError, KeyError):
             pass
 
+    # Сохраняем пользователя в state для использования в шаблонах и зависимостях
     request.state.user = user
+    # Сохраняем логин пользователя отдельно для логирования
+    request.state.user_login = user['login'] if user and 'login' in user else "Anonymous"
+
     response = await call_next(request)
     return response
 
@@ -48,6 +53,9 @@ app.include_router(subscribers_router.router)
 app.include_router(service_router.router)
 app.include_router(equipment_router.router)
 app.include_router(contracts_router.router)
+app.include_router(employees_router.router) # Новый роутер
+app.include_router(reports_router.router)   # Новый роутер
+app.include_router(logs_router.router)       # Новый роутер
 
 
 @app.get("/")

@@ -3,6 +3,11 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h1>Список услуг</h1>
+    {% if request.state.user.role == 'Администратор' %}
+    <a href="/services/new" class="btn btn-primary">
+        <i class="bi bi-plus-lg"></i> Добавить услугу
+    </a>
+    {% endif %}
 </div>
 
 <table class="table table-striped table-hover">
@@ -12,6 +17,10 @@
         <th>Название</th>
         <th>Описание</th>
         <th>Стоимость в месяц</th>
+        <th>Статус</th>
+        {% if request.state.user.role == 'Администратор' %}
+        <th>Действия</th>
+        {% endif %}
     </tr>
     </thead>
     <tbody>
@@ -21,10 +30,30 @@
             <td>{{ service.name }}</td>
             <td>{{ service.description }}</td>
             <td>{{ "%.2f"|format(service.price) }} BYN</td>
+            <td>
+                <span class="badge {% if service.status == 'Активна' %}bg-success{% else %}bg-secondary{% endif %}">
+                    {{ service.status }}
+                </span>
+            </td>
+            {% if request.state.user.role == 'Администратор' %}
+            <td>
+                 <a href="/services/{{ service.service_id }}/edit" class="btn btn-sm btn-outline-secondary me-2" title="Редактировать">
+                    <i class="bi bi-pencil"></i>
+                </a>
+                <button class="btn btn-sm btn-outline-danger"
+                        title="Удалить"
+                        hx-delete="/services/{{ service.service_id }}"
+                        hx-target="closest tr"
+                        hx-swap="outerHTML"
+                        hx-confirm="Вы уверены, что хотите удалить услугу '{{ service.name }}'? Это действие необратимо.">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </td>
+            {% endif %}
         </tr>
     {% else %}
         <tr>
-            <td colspan="4" class="text-center">В системе нет доступных услуг.</td>
+            <td colspan="6" class="text-center">В системе нет доступных услуг.</td>
         </tr>
     {% endfor %}
     </tbody>

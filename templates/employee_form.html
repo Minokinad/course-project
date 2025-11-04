@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block content %}
+    {% if employee %}
+        <h1>Редактирование сотрудника</h1>
+        <form action="/employees/{{ employee.employee_id }}/edit" method="post">
+    {% else %}
+        <h1>Создание нового сотрудника</h1>
+        <form action="/employees/new" method="post">
+    {% endif %}
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="mb-3">
+                <label for="name" class="form-label">ФИО</label>
+                <input type="text" class="form-control" id="name" name="name" value="{{ employee.name if employee else '' }}" required>
+            </div>
+            <div class="mb-3">
+                <label for="email" class="form-label">Email</label>
+                <input type="email" class="form-control" id="email" name="email" value="{{ employee.email if employee else '' }}" required>
+            </div>
+             <div class="mb-3">
+                <label for="login" class="form-label">Логин</label>
+                <input type="text" class="form-control" id="login" name="login" value="{{ employee.login if employee else '' }}" required>
+            </div>
+             <div class="mb-3">
+                <label for="password" class="form-label">Пароль</label>
+                <input type="password" class="form-control" id="password" name="password" {% if not employee %}required{% endif %}>
+                 {% if employee %}
+                 <div class="form-text">Оставьте поле пустым, если не хотите изменять пароль.</div>
+                 {% endif %}
+            </div>
+             <div class="mb-3">
+                <label for="role" class="form-label">Роль</label>
+                 <select class="form-select" id="role" name="role" required>
+                     {% set roles = ['Администратор', 'Менеджер', 'Технический специалист'] %}
+                     {% for r in roles %}
+                         <option value="{{ r }}" {% if employee and employee.role == r %}selected{% endif %}>{{ r }}</option>
+                     {% endfor %}
+                 </select>
+            </div>
+
+            <button type="submit" class="btn btn-success">Сохранить</button>
+            <a href="/employees" class="btn btn-secondary">Отмена</a>
+        </div>
+    </div>
+</form>
+{% endblock %}
