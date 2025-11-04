@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-3">
+        {% include 'partials/subscriber_menu.html' %}
+    </div>
+    <div class="col-md-9">
+        <h1 class="h3 mb-4">Редактирование профиля</h1>
+
+        {% if error %}
+        <div class="alert alert-danger">{{ error }}</div>
+        {% endif %}
+
+        <form action="/subscriber/edit" method="post">
+            <div class="mb-3">
+                <label for="full_name" class="form-label">ФИО</label>
+                <input type="text" class="form-control" id="full_name" name="full_name" value="{{ subscriber.full_name }}" required>
+            </div>
+            <div class="mb-3">
+                <label for="address" class="form-label">Адрес</label>
+                <input type="text" class="form-control" id="address" name="address" value="{{ subscriber.address }}" required>
+            </div>
+            <div class="mb-3">
+                <label for="phone_number" class="form-label">Номер телефона</label>
+                <input type="text" class="form-control" id="phone_number" name="phone_number" value="{{ subscriber.phone_number }}" required>
+            </div>
+
+            <button type="submit" class="btn btn-success">Сохранить изменения</button>
+            <a href="/subscriber/cabinet" class="btn btn-secondary">Отмена</a>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-3">
+        {% include 'partials/subscriber_menu.html' %}
+    </div>
+    <div class="col-md-9">
+        <h1 class="h3 mb-4">Уведомления</h1>
+
+        {% if notifications %}
+            <div class="list-group">
+            {% for notification in notifications %}
+                <div class="list-group-item list-group-item-action flex-column align-items-start">
+                    <div class="d-flex w-100 justify-content-between">
+                        <h5 class="mb-1">
+                            {% if notification.type == 'Предупреждение о задолженности' %}
+                                <i class="bi bi-exclamation-triangle-fill text-danger"></i>
+                            {% else %}
+                                <i class="bi bi-info-circle-fill text-primary"></i>
+                            {% endif %}
+                            {{ notification.type }}
+                        </h5>
+                        <small>{{ notification.sent_date.strftime('%d.%m.%Y %H:%M') }}</small>
+                    </div>
+                    <p class="mb-1">{{ notification.message }}</p>
+                </div>
+            {% endfor %}
+            </div>
+        {% else %}
+        <div class="alert alert-info">У вас нет новых уведомлений.</div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
