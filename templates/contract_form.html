@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Создание нового договора</h1>
+
+<div class="row">
+    <div class="col-md-8">
+        <form action="/contracts/new" method="post">
+            <div class="mb-3">
+                <label for="subscriber_id" class="form-label">Абонент</label>
+                <select class="form-select" id="subscriber_id" name="subscriber_id" required>
+                    <option value="" disabled selected>Выберите абонента...</option>
+                    {% for sub in subscribers %}
+                        <option value="{{ sub.subscriber_id }}">{{ sub.full_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label for="service_id" class="form-label">Услуга</label>
+                <select class="form-select" id="service_id" name="service_id" required>
+                     <option value="" disabled selected>Выберите услугу...</option>
+                    {% for srv in services %}
+                        <option value="{{ srv.service_id }}">{{ srv.name }} ({{ "%.2f"|format(srv.price) }} BYN/мес.)</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label for="start_date" class="form-label">Дата начала действия договора</label>
+                <input type="date" class="form-control" id="start_date" name="start_date" value="{{ 'YYYY-MM-DD' }}" required>
+            </div>
+
+            <button type="submit" class="btn btn-success">Создать договор</button>
+            <a href="/contracts" class="btn btn-secondary">Отмена</a>
+        </form>
+    </div>
+</div>
+<script>
+    // Устанавливаем сегодняшнюю дату по умолчанию для поля даты
+    document.addEventListener('DOMContentLoaded', (event) => {
+        const today = new Date();
+        const yyyy = today.getFullYear();
+        const mm = String(today.getMonth() + 1).padStart(2, '0'); // Месяцы от 0 до 11
+        const dd = String(today.getDate()).padStart(2, '0');
+        document.getElementById('start_date').value = `${yyyy}-${mm}-${dd}`;
+    });
+</script>
+{% endblock %}

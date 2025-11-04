@@ -3,16 +3,24 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h1>Все договоры</h1>
+    {% if request.state.user.role in ['Администратор', 'Менеджер'] %}
+    <a href="/contracts/new" class="btn btn-primary">
+        <i class="bi bi-plus-lg"></i> Создать договор
+    </a>
+    {% endif %}
 </div>
 
 <table class="table table-striped table-hover">
     <thead>
     <tr>
-        <th>ID договора</th>
+        <th>ID</th>
         <th>Абонент</th>
         <th>Услуга</th>
         <th>Дата начала</th>
         <th>Статус</th>
+        {% if request.state.user.role in ['Администратор', 'Менеджер'] %}
+        <th>Действия</th>
+        {% endif %}
     </tr>
     </thead>
     <tbody>
@@ -25,14 +33,61 @@
             <td>{{ contract.service_name }}</td>
             <td>{{ contract.start_date.strftime('%d.%m.%Y') }}</td>
             <td>
-                <span class="badge {% if contract.status == 'Активен' %}bg-success{% elif contract.status == 'Приостановлен' %}bg-warning{% else %}bg-secondary{% endif %}">
+                <span class="badge
+                    {% if contract.status == 'Активен' %}bg-success
+                    {% elif contract.status == 'Приостановлен' %}bg-warning text-dark
+                    {% elif contract.status == 'Ожидает активации' %}bg-info text-dark
+                    {% else %}bg-secondary{% endif %}">
                     {{ contract.status }}
                 </span>
             </td>
+
+            {% if request.state.user.role in ['Администратор', 'Менеджер'] %}
+            <td>
+                <div class="d-flex">
+                {% if contract.status == 'Ожидает активации' %}
+                    <form action="/contracts/{{ contract.contract_id }}/update-status" method="post" class="me-2">
+                        <input type="hidden" name="new_status" value="Активен">
+                        <button type="submit" class="btn btn-sm btn-success" title="Активировать">
+                            <i class="bi bi-check-circle"></i>
+                        </button>
+                    </form>
+                {% elif contract.status == 'Активен' %}
+                    <form action="/contracts/{{ contract.contract_id }}/update-status" method="post" class="me-2">
+                        <input type="hidden" name="new_status" value="Приостановлен">
+                        <button type="submit" class="btn btn-sm btn-warning" title="Приостановить">
+                            <i class="bi bi-pause-circle"></i>
+                        </button>
+                    </form>
+                    <form action="/contracts/{{ contract.contract_id }}/update-status" method="post">
+                        <input type="hidden" name="new_status" value="Расторгнут">
+                        <button type="submit" class="btn btn-sm btn-danger" title="Расторгнуть"
+                                onclick="return confirm('Вы уверены, что хотите расторгнуть договор №{{ contract.contract_id }}?')">
+                            <i class="bi bi-x-circle"></i>
+                        </button>
+                    </form>
+                {% elif contract.status == 'Приостановлен' %}
+                     <form action="/contracts/{{ contract.contract_id }}/update-status" method="post" class="me-2">
+                        <input type="hidden" name="new_status" value="Активен">
+                        <button type="submit" class="btn btn-sm btn-success" title="Возобновить">
+                             <i class="bi bi-play-circle"></i>
+                        </button>
+                    </form>
+                    <form action="/contracts/{{ contract.contract_id }}/update-status" method="post">
+                        <input type="hidden" name="new_status" value="Расторгнут">
+                        <button type="submit" class="btn btn-sm btn-danger" title="Расторгнуть"
+                                onclick="return confirm('Вы уверены, что хотите расторгнуть договор №{{ contract.contract_id }}?')">
+                            <i class="bi bi-x-circle"></i>
+                        </button>
+                    </form>
+                {% endif %}
+                </div>
+            </td>
+            {% endif %}
         </tr>
     {% else %}
         <tr>
-            <td colspan="5" class="text-center">В системе нет ни одного договора.</td>
+            <td colspan="6" class="text-center">В системе нет ни одного договора.</td>
         </tr>
     {% endfor %}
     </tbody>
