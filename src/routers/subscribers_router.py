@@ -85,7 +85,19 @@ async def update_subscriber_form(
 
 @router.delete("/{sub_id}", response_class=HTMLResponse, dependencies=[Depends(require_admin)])
 async def delete_subscriber_htmx(request: Request, sub_id: int):
-    await subscriber_service.delete_subscriber(sub_id, user_login=request.state.user_login)
+    result = await subscriber_service.delete_subscriber(sub_id, user_login=request.state.user_login)
+
+    if result.get("error"):
+        # Если сервис вернул ошибку, отправляем HTML с сообщением и статусом 409 Conflict
+        error_html = f"""
+        <tr class="table-danger" hx-swap-oob="true" id="error-row-{sub_id}">
+            <td colspan="6">{result['error']} <button class="btn btn-sm btn-link" onclick="this.closest('tr').remove()">OK</button></td>
+        </tr>
+        """
+        # Возвращаем пустой контент, но с OOB (Out-of-Band) свопом, чтобы вставить строку ошибки
+        return HTMLResponse(content=f'<tr id="subscriber-row-{sub_id}">{error_html}</tr>', status_code=409)
+
+    # В случае успеха возвращаем пустой контент, HTMX удалит строку
     return HTMLResponse(content="", status_code=200)
 
 

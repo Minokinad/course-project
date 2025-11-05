@@ -5,6 +5,7 @@ DROP TABLE IF EXISTS contracts CASCADE;
 DROP TABLE IF EXISTS services CASCADE;
 DROP TABLE IF EXISTS subscribers CASCADE;
 DROP TABLE IF EXISTS employees CASCADE;
+DROP TABLE IF EXISTS system_logs CASCADE;
 
 CREATE TABLE employees (
     employee_id   SERIAL PRIMARY KEY,
@@ -20,7 +21,7 @@ CREATE TABLE subscribers (
     full_name     VARCHAR(255) NOT NULL,
     address       TEXT,
     phone_number  VARCHAR(20) UNIQUE NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
+    password_hash VARCHAR(255),
     balance       NUMERIC(10, 2) NOT NULL DEFAULT 0.00
 );
 

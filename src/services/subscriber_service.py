@@ -58,11 +58,23 @@ async def update_subscriber(sub_id: int, full_name: str, address: str, phone_num
 
 async def delete_subscriber(sub_id: int, user_login: str):
     conn = await get_db_connection()
-    # Сначала получим имя для лога
-    sub_name = await conn.fetchval("SELECT full_name FROM subscribers WHERE subscriber_id = $1", sub_id)
-    await conn.execute("DELETE FROM subscribers WHERE subscriber_id = $1", sub_id)
-    await conn.close()
-    await log_action("WARNING", f"Удален абонент '{sub_name}' (ID: {sub_id}).", user_login)
+    try:
+        # 1. Проверяем наличие связанных договоров
+        contract_count = await conn.fetchval("SELECT COUNT(*) FROM contracts WHERE subscriber_id = $1", sub_id)
+        if contract_count > 0:
+            return {"error": f"Нельзя удалить абонента (ID: {sub_id}), так как у него есть {contract_count} договор(ов). Сначала расторгните или удалите договоры."}
+
+        # 2. Если договоров нет, получаем имя для лога и удаляем
+        sub_name = await conn.fetchval("SELECT full_name FROM subscribers WHERE subscriber_id = $1", sub_id)
+        if not sub_name:
+            return {"error": f"Абонент с ID {sub_id} не найден."}
+
+        await conn.execute("DELETE FROM subscribers WHERE subscriber_id = $1", sub_id)
+
+        await log_action("WARNING", f"Удален абонент '{sub_name}' (ID: {sub_id}).", user_login)
+        return {"success": True}
+    finally:
+        await conn.close()
 
 
 async def import_subscribers_from_list(subscribers: list, user_login: str) -> int:

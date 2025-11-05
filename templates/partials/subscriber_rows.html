@@ -1,5 +1,5 @@
 {% for sub in subscribers %}
-<tr>
+<tr id="subscriber-row-{{ sub.subscriber_id }}">
     <td>{{ sub.subscriber_id }}</td>
     <td>{{ sub.full_name }}</td>
     <td>{{ sub.address }}</td>
@@ -20,7 +20,7 @@
         <button class="btn btn-sm btn-outline-danger"
                 title="Удалить"
                 hx-delete="/subscribers/{{ sub.subscriber_id }}"
-                hx-target="closest tr"
+                hx-target="#subscriber-row-{{ sub.subscriber_id }}"
                 hx-swap="outerHTML"
                 hx-confirm="Вы уверены, что хотите удалить абонента {{ sub.full_name }}?">
             <i class="bi bi-trash"></i>

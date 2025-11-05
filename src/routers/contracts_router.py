@@ -39,6 +39,7 @@ async def new_contract_form(request: Request):
 
 @router.post("/new", dependencies=[Depends(require_manager)])
 async def create_contract_action(
+    request: Request, # Добавлен request
     subscriber_id: int = Form(...),
     service_id: int = Form(...),
     start_date: date = Form(...)
@@ -46,13 +47,23 @@ async def create_contract_action(
     """
     Обрабатывает создание нового договора.
     """
-    await contract_service.create_contract(subscriber_id, service_id, start_date)
+    # Теперь передаем user_login в сервис
+    await contract_service.create_contract(
+        subscriber_id, service_id, start_date, user_login=request.state.user_login
+    )
     return RedirectResponse(url="/contracts", status_code=303)
 
 @router.post("/{contract_id}/update-status", dependencies=[Depends(require_manager)])
-async def update_contract_status_action(contract_id: int, new_status: str = Form(...)):
+async def update_contract_status_action(
+    request: Request, # Добавлен request
+    contract_id: int,
+    new_status: str = Form(...)
+):
     """
     Обрабатывает изменение статуса договора (Активировать, Приостановить, Расторгнуть).
     """
-    await contract_service.update_contract_status(contract_id, new_status)
+    # Теперь передаем user_login в сервис
+    await contract_service.update_contract_status(
+        contract_id, new_status, user_login=request.state.user_login
+    )
     return RedirectResponse(url="/contracts", status_code=303)
