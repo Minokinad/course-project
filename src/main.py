@@ -3,17 +3,21 @@ from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from jose import JWTError, jwt
 
+from src.templating import templates
+from src.services import service_service
+
 from src.routers import (
     subscribers_router, auth_router, cabinet_router,
     service_router, equipment_router, contracts_router,
-    employees_router, reports_router, logs_router,
-    tickets_router
+    employees_router, reports_router, logs_router, tickets_router
 )
 from src.services.auth_service import get_employee_by_login
 from src.services.subscriber_service import fetch_subscriber_by_id
 from src.config import settings
 
+
 app = FastAPI(title="АИС Интернет-провайдера")
+
 
 
 @app.middleware("http")
@@ -59,5 +63,31 @@ app.include_router(tickets_router.router)
 
 
 @app.get("/")
-async def root():
-    return RedirectResponse(url="/auth/login")
+async def root(request: Request):
+    """
+    Главный маршрутизатор.
+    - Для неавторизованных пользователей показывает главную страницу.
+    - Для авторизованных - перенаправляет в соответствующий раздел.
+    """
+    # Middleware уже определил пользователя и поместил его в request.state
+    user = request.state.user
+
+    # 1. Если пользователь не авторизован
+    if not user:
+        # Показываем ему публичную главную страницу с услугами
+        active_services = await service_service.fetch_all_services(status_filter="Активна")
+        return templates.TemplateResponse(
+            "landing_page.html",
+            {
+                "request": request,
+                "services": active_services
+            }
+        )
+
+    # 2. Если пользователь авторизован, проверяем его роль
+    if user.get("role") == "subscriber":
+        # Это абонент -> перенаправляем в его личный кабинет
+        return RedirectResponse(url="/subscriber/cabinet")
+    else:
+        # Это сотрудник (любая роль) -> перенаправляем на страницу с абонентами
+        return RedirectResponse(url="/subscribers")

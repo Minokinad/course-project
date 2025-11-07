@@ -85,7 +85,7 @@ async def subscriber_top_up(
 
 @router.post("/logout")
 async def subscriber_logout():
-    response = RedirectResponse(url="/auth/login", status_code=303)
+    response = RedirectResponse(url="/", status_code=303)
     response.delete_cookie("access_token")
     return response
 

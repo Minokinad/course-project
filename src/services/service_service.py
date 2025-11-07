@@ -3,15 +3,27 @@ from src.db.connection import get_db_connection
 from src.services.log_service import log_action
 
 
-async def fetch_all_services(sort_by: Optional[str] = None, order: Optional[str] = 'asc'):
+async def fetch_all_services(
+    sort_by: Optional[str] = None,
+    order: Optional[str] = 'asc',
+    status_filter: Optional[str] = None  # <-- ДОБАВЬТЕ ЭТОТ ПАРАМЕТР
+):
     """
     Получает список всех услуг, предоставляемых провайдером.
+    Добавлена возможность фильтрации по статусу.
     """
     conn = await get_db_connection()
 
     allowed_sort_columns = ["service_id", "name", "price", "status"]
 
     query = "SELECT * FROM services"
+    params = []
+
+    # --- БЛОК ИЗМЕНЕНИЙ ---
+    if status_filter:
+        query += " WHERE status = $1"
+        params.append(status_filter)
+    # --- КОНЕЦ БЛОКА ИЗМЕНЕНИЙ ---
 
     if sort_by in allowed_sort_columns:
         order_direction = "DESC" if order == 'desc' else "ASC"
@@ -19,7 +31,7 @@ async def fetch_all_services(sort_by: Optional[str] = None, order: Optional[str]
     else:
         query += " ORDER BY name"  # Сортировка по умолчанию
 
-    rows = await conn.fetch(query)
+    rows = await conn.fetch(query, *params) # <-- ПЕРЕДАЕМ ПАРАМЕТРЫ
     await conn.close()
     return rows
 

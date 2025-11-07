@@ -39,14 +39,14 @@ async def login_form(request: Request, username: str = Form(...), password: str 
     )
 
 # --- ВЫХОД (теперь один для всех) ---
+
 @router.post("/logout")
 async def logout():
-    response = RedirectResponse(url="/auth/login", status_code=303)
+    response = RedirectResponse(url="/", status_code=303)
     response.delete_cookie("access_token")
     return response
 
 
-# --- РЕГИСТРАЦИЯ АБОНЕНТА ---
 @router.get("/register", response_class=HTMLResponse)
 async def register_page(request: Request):
     return templates.TemplateResponse("register.html", {"request": request})
@@ -69,7 +69,6 @@ async def register_form(
             {"request": request, "error": "Номер телефона уже зарегистрирован"}
         )
 
-    # После успешной регистрации сразу логиним абонента
     access_token = auth_service.create_access_token(
         data={"sub": str(new_subscriber['subscriber_id']), "role": "subscriber"}
     )
