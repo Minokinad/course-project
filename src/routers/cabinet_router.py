@@ -1,19 +1,25 @@
-from fastapi import APIRouter, Request, Depends, Form, HTTPException
+from fastapi import APIRouter, Request, Depends, Form, File, UploadFile, HTTPException, status
 from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.templating import Jinja2Templates
+from pathlib import Path
 
-from src.services import subscriber_auth_service, subscriber_service
+from src.services import subscriber_auth_service, subscriber_service, contract_service, ticket_service
+from src.services.notification_service import notification_service
 from src.auth.dependencies import require_subscriber_login, get_current_subscriber
+from src.templating import templates
 
 router = APIRouter(prefix="/subscriber", tags=["Subscriber Cabinet"])
-templates = Jinja2Templates(directory="templates")
 
+async def add_common_subscriber_context(request: Request, current_subscriber: dict = Depends(get_current_subscriber)):
+    """
+    Добавляет общие данные (например, кол-во уведомлений) в контекст запроса.
+    """
+    unread_count = await notification_service.count_unread_notifications(current_subscriber['subscriber_id'])
+    request.state.unread_notifications = unread_count
+    return current_subscriber
 
-# Главная страница кабинета (теперь это дашборд)
-@router.get("/cabinet", response_class=HTMLResponse, dependencies=[Depends(require_subscriber_login)])
-async def subscriber_cabinet_dashboard(request: Request, current_subscriber: dict = Depends(get_current_subscriber)):
-    contracts = await subscriber_auth_service.get_subscriber_contracts(current_subscriber['subscriber_id'])
-    # Обновляем данные абонента на случай, если баланс изменился
+@router.get("/cabinet", response_class=HTMLResponse)
+async def subscriber_cabinet_dashboard(request: Request, current_subscriber: dict = Depends(add_common_subscriber_context)):
+    contracts = await contract_service.fetch_contracts_by_subscriber_id(current_subscriber['subscriber_id'])
     subscriber_info = await subscriber_service.fetch_subscriber_by_id(current_subscriber['subscriber_id'])
 
     return templates.TemplateResponse("subscriber_cabinet.html", {
@@ -24,9 +30,8 @@ async def subscriber_cabinet_dashboard(request: Request, current_subscriber: dic
     })
 
 
-# Страница истории платежей
-@router.get("/payments", response_class=HTMLResponse, dependencies=[Depends(require_subscriber_login)])
-async def subscriber_payments_page(request: Request, current_subscriber: dict = Depends(get_current_subscriber)):
+@router.get("/payments", response_class=HTMLResponse)
+async def subscriber_payments_page(request: Request, current_subscriber: dict = Depends(add_common_subscriber_context)):
     payments = await subscriber_auth_service.get_subscriber_payments(current_subscriber['subscriber_id'])
     return templates.TemplateResponse("subscriber_payments.html", {
         "request": request,
@@ -35,10 +40,15 @@ async def subscriber_payments_page(request: Request, current_subscriber: dict = 
     })
 
 
-# Страница уведомлений
-@router.get("/notifications", response_class=HTMLResponse, dependencies=[Depends(require_subscriber_login)])
-async def subscriber_notifications_page(request: Request, current_subscriber: dict = Depends(get_current_subscriber)):
-    notifications = await subscriber_auth_service.get_subscriber_notifications(current_subscriber['subscriber_id'])
+@router.get("/notifications", response_class=HTMLResponse)
+async def subscriber_notifications_page(request: Request,
+                                        current_subscriber: dict = Depends(add_common_subscriber_context)):
+    notifications = await notification_service.get_notifications_for_subscriber(current_subscriber['subscriber_id'])
+
+    await notification_service.mark_notifications_as_read(current_subscriber['subscriber_id'])
+
+    request.state.unread_notifications = 0
+
     return templates.TemplateResponse("subscriber_notifications.html", {
         "request": request,
         "notifications": notifications,
@@ -46,9 +56,8 @@ async def subscriber_notifications_page(request: Request, current_subscriber: di
     })
 
 
-# Страница редактирования профиля
-@router.get("/edit", response_class=HTMLResponse, dependencies=[Depends(require_subscriber_login)])
-async def subscriber_edit_page(request: Request, current_subscriber: dict = Depends(get_current_subscriber)):
+@router.get("/edit", response_class=HTMLResponse)
+async def subscriber_edit_page(request: Request, current_subscriber: dict = Depends(add_common_subscriber_context)):
     return templates.TemplateResponse("subscriber_edit_form.html", {
         "request": request,
         "subscriber": current_subscriber,
@@ -56,14 +65,13 @@ async def subscriber_edit_page(request: Request, current_subscriber: dict = Depe
     })
 
 
-# Обработка формы редактирования
 @router.post("/edit")
 async def subscriber_edit_form(
         request: Request,
         current_subscriber: dict = Depends(require_subscriber_login),
-        full_name: str = Form(...),
-        address: str = Form(...),
-        phone_number: str = Form(...)
+        full_name: str = Form(..., max_length=100),
+        address: str = Form(..., max_length=255),
+        phone_number: str = Form(..., max_length=20, pattern=r'^\+?[0-9]+$')
 ):
     result = await subscriber_auth_service.update_subscriber_contact_info(
         current_subscriber['subscriber_id'], full_name, address, phone_number
@@ -78,23 +86,129 @@ async def subscriber_edit_form(
     return RedirectResponse(url="/subscriber/cabinet", status_code=303)
 
 
-# Обработка формы пополнения баланса
 @router.post("/top-up")
 async def subscriber_top_up(
-        current_subscriber: dict = Depends(require_subscriber_login),
-        amount: float = Form(...)
+        request: Request,
+        current_subscriber: dict = Depends(add_common_subscriber_context),
+        amount: float = Form(..., ge=1, le=1000)
 ):
-    if amount <= 0:
-        # Можно добавить обработку ошибки в шаблоне, но для простоты просто перенаправляем
-        return RedirectResponse(url="/subscriber/cabinet", status_code=303)
+    subscriber_info = await subscriber_service.fetch_subscriber_by_id(current_subscriber['subscriber_id'])
+    if subscriber_info['balance'] + amount > 10000.00:
+        contracts = await contract_service.fetch_contracts_by_subscriber_id(current_subscriber['subscriber_id'])
+        return templates.TemplateResponse("subscriber_cabinet.html", {
+            "request": request,
+            "subscriber": subscriber_info,
+            "contracts": contracts,
+            "active_page": "cabinet",
+            "top_up_error": f"После пополнения баланс превысит максимальный лимит в 10000.00 BYN."
+        }, status_code=400)
 
     await subscriber_auth_service.top_up_subscriber_balance(current_subscriber['subscriber_id'], amount)
     return RedirectResponse(url="/subscriber/cabinet", status_code=303)
 
 
-# Выход из системы
 @router.post("/logout")
 async def subscriber_logout():
-    response = RedirectResponse(url="/auth/login", status_code=303)
+    response = RedirectResponse(url="/", status_code=303)
     response.delete_cookie("access_token")
     return response
+
+@router.get("/tickets", response_class=HTMLResponse, dependencies=[Depends(add_common_subscriber_context)])
+async def subscriber_tickets_page(request: Request, current_subscriber: dict = Depends(add_common_subscriber_context)):
+    tickets = await ticket_service.fetch_tickets_by_subscriber_id(current_subscriber['subscriber_id'])
+    return templates.TemplateResponse("subscriber_tickets.html", {
+        "request": request,
+        "tickets": tickets,
+        "active_page": "tickets"
+    })
+
+
+@router.get("/tickets/new", response_class=HTMLResponse, dependencies=[Depends(add_common_subscriber_context)])
+async def new_ticket_form(request: Request):
+    return templates.TemplateResponse("ticket_form_subscriber.html", {
+        "request": request,
+        "active_page": "tickets"
+    })
+
+
+@router.post("/tickets/new")
+async def create_ticket_action(
+    request: Request,
+    current_subscriber: dict = Depends(add_common_subscriber_context),
+    title: str = Form(...),
+    description: str = Form("")
+):
+    await ticket_service.create_ticket(current_subscriber['subscriber_id'], title, description)
+    return RedirectResponse(url="/subscriber/tickets", status_code=303)
+
+
+@router.get("/tickets/{ticket_id}", response_class=HTMLResponse, dependencies=[Depends(add_common_subscriber_context)])
+async def subscriber_ticket_detail_page(request: Request, ticket_id: int,
+                                        current_subscriber: dict = Depends(add_common_subscriber_context)):
+    ticket = await ticket_service.fetch_ticket_by_id(ticket_id)
+
+    # Проверка, что абонент смотрит свою заявку
+    if not ticket or ticket['subscriber_id'] != current_subscriber['subscriber_id']:
+        return RedirectResponse(url="/subscriber/tickets", status_code=404)
+
+    messages = await ticket_service.fetch_messages_for_ticket(ticket_id)
+
+    return templates.TemplateResponse("subscriber_ticket_detail.html", {
+        "request": request,
+        "ticket": ticket,
+        "messages": messages,
+        "active_page": "tickets"
+    })
+
+@router.post("/tickets/{ticket_id}/add-message")
+async def add_message_subscriber_action(
+    request: Request,
+    ticket_id: int,
+    current_subscriber: dict = Depends(add_common_subscriber_context),
+    message_text: str = Form(...)
+):
+    ticket = await ticket_service.fetch_ticket_by_id(ticket_id)
+    # Снова проверка на всякий случай
+    if not ticket or ticket['subscriber_id'] != current_subscriber['subscriber_id']:
+        return RedirectResponse(url="/subscriber/tickets", status_code=403)
+
+    if message_text.strip():
+         await ticket_service.add_message_to_ticket(
+            ticket_id=ticket_id,
+            message_text=message_text,
+            subscriber_id=current_subscriber['subscriber_id'],
+            user_login=f"subscriber_{current_subscriber['subscriber_id']}"
+        )
+    return RedirectResponse(url=f"/subscriber/tickets/{ticket_id}", status_code=303)
+
+
+@router.post("/edit/avatar")
+async def subscriber_upload_avatar(
+        request: Request,
+        current_subscriber: dict = Depends(require_subscriber_login),
+        avatar: UploadFile = File(...)
+):
+    # --- БЛОК ВАЛИДАЦИИ ФАЙЛА ---
+    ALLOWED_CONTENT_TYPES = ["image/jpeg", "image/png", "image/gif"]
+    MAX_FILE_SIZE = 5 * 1024 * 1024  # 5 MB
+
+    if avatar.content_type not in ALLOWED_CONTENT_TYPES:
+        error_msg = "Неверный формат файла. Разрешены только JPG, PNG и GIF."
+    elif avatar.size > MAX_FILE_SIZE:
+        error_msg = "Файл слишком большой. Максимальный размер: 5 МБ."
+    else:
+        error_msg = None
+
+    if error_msg:
+        # Получаем актуальные данные пользователя для рендеринга страницы
+        subscriber_info = await subscriber_service.fetch_subscriber_by_id(current_subscriber['subscriber_id'])
+        return templates.TemplateResponse("subscriber_edit_form.html", {
+            "request": request,
+            "subscriber": subscriber_info,
+            "active_page": "edit",
+            "error": error_msg  # Передаем ошибку в шаблон
+        }, status_code=status.HTTP_400_BAD_REQUEST)
+    # --- КОНЕЦ БЛОКА ВАЛИДАЦИИ ---
+
+    await subscriber_auth_service.update_subscriber_avatar(current_subscriber['subscriber_id'], avatar)
+    return RedirectResponse(url="/subscriber/edit", status_code=303)

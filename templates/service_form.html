@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block content %}
+    {% if service %}
+        <h1>Редактирование услуги</h1>
+        <form action="/services/{{ service.service_id }}/edit" method="post">
+    {% else %}
+        <h1>Создание новой услуги</h1>
+        <form action="/services/new" method="post">
+    {% endif %}
+
+    <div class="row">
+        <div class="col-md-8">
+             <div class="mb-3">
+                <label for="name" class="form-label">Название услуги</label>
+                <input type="text" class="form-control" id="name" name="name" value="{{ service.name if service else '' }}" required>
+            </div>
+             <div class="mb-3">
+                <label for="description" class="form-label">Описание</label>
+                 <textarea class="form-control" id="description" name="description" rows="3">{{ service.description if service else '' }}</textarea>
+            </div>
+             <div class="mb-3">
+                <label for="price" class="form-label">Стоимость (BYN/мес.)</label>
+                <input type="number" step="0.01" class="form-control" id="price" name="price" value="{{ service.price if service else '0.00' }}" required>
+            </div>
+            <div class="mb-3">
+                <label for="status" class="form-label">Статус</label>
+                 <select class="form-select" id="status" name="status" required>
+                     {% set statuses = ['Активна', 'Архивная'] %}
+                     {% for s in statuses %}
+                         <option value="{{ s }}" {% if service and service.status == s %}selected{% endif %}>{{ s }}</option>
+                     {% endfor %}
+                 </select>
+            </div>
+
+            <button type="submit" class="btn btn-success">Сохранить</button>
+            <a href="/services" class="btn btn-secondary">Отмена</a>
+        </div>
+    </div>
+</form>
+{% endblock %}

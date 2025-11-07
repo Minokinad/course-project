@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block content %}
+    {% if equipment %}
+        <h1>Редактирование оборудования</h1>
+        <form action="/equipment/{{ equipment.equipment_id }}/edit" method="post">
+    {% else %}
+        <h1>Добавление нового оборудования</h1>
+        <form action="/equipment/new" method="post">
+    {% endif %}
+
+    <div class="row">
+        <div class="col-md-8">
+             <div class="mb-3">
+                <label for="type" class="form-label">Тип оборудования</label>
+                <input type="text" class="form-control" id="type" name="type" value="{{ equipment.type if equipment else '' }}" required maxlength="50">
+            </div>
+             <div class="mb-3">
+                <label for="serial_number" class="form-label">Серийный номер</label>
+                <input type="text" class="form-control" id="serial_number" name="serial_number" value="{{ equipment.serial_number if equipment else '' }}" required maxlength="100">
+            </div>
+            <div class="mb-3">
+                <label for="mac_address" class="form-label">MAC-адрес</label>
+                <input type="text" class="form-control" id="mac_address" name="mac_address"
+                       value="{{ equipment.mac_address if equipment and equipment.mac_address else '' }}"
+                       placeholder="XX:XX:XX:XX:XX:XX"
+                       pattern="([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})"
+                       title="Введите MAC-адрес в формате XX:XX:XX:XX:XX:XX"
+                       required >
+            </div>
+             <div class="mb-3">
+                <label for="status" class="form-label">Статус</label>
+                 <select class="form-select" id="status" name="status" required>
+                     {% set statuses = ['На складе', 'У абонента', 'В ремонте', 'Списано'] %}
+                     {% for s in statuses %}
+                         <option value="{{ s }}" {% if equipment and equipment.status == s %}selected{% endif %}>{{ s }}</option>
+                     {% endfor %}
+                 </select>
+            </div>
+            <div class="mb-3">
+                <label for="contract_id" class="form-label">Привязка к договору</label>
+                <select class="form-select" id="contract_id" name="contract_id">
+                    <option value="">Не привязывать (на складе)</option>
+                    {% for contract in contracts %}
+                        <option value="{{ contract.contract_id }}"
+                                {% if equipment and equipment.contract_id == contract.contract_id %}selected{% endif %}>
+                            Договор №{{ contract.contract_id }} ({{ contract.full_name }})
+                        </option>
+                    {% endfor %}
+                </select>
+                <div class="form-text">
+                    В списке показаны только договоры, к которым еще не привязано оборудование.
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-success">Сохранить</button>
+            <a href="/equipment" class="btn btn-secondary">Отмена</a>
+        </div>
+    </div>
+</form>
+{% endblock %}

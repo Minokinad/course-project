@@ -1,5 +1,46 @@
+import secrets
+from fastapi_mail import FastMail, MessageSchema, ConnectionConfig
+from src.config import settings
 from src.db.connection import get_db_connection
 from src.services.auth_service import verify_password, hash_password
+from src.services.file_service import save_avatar
+from fastapi import UploadFile
+
+conf = ConnectionConfig(
+    MAIL_USERNAME=settings.MAIL_USERNAME,
+    MAIL_PASSWORD=settings.MAIL_PASSWORD,
+    MAIL_FROM=settings.MAIL_FROM,
+    MAIL_PORT=settings.MAIL_PORT,
+    MAIL_SERVER=settings.MAIL_SERVER,
+    MAIL_STARTTLS=settings.MAIL_STARTTLS,
+    MAIL_SSL_TLS=settings.MAIL_SSL_TLS,
+    USE_CREDENTIALS=True,
+    VALIDATE_CERTS=True
+)
+
+
+async def send_confirmation_email(email_to: str, token: str):
+    """Отправляет письмо с ссылкой для подтверждения."""
+    # В реальном приложении этот URL лучше вынести в .env
+    confirmation_url = f"http://127.0.0.1:8000/auth/confirm/{token}"
+
+    html_content = f"""
+    <h3>Подтверждение регистрации</h3>
+    <p>Здравствуйте!</p>
+    <p>Спасибо за регистрацию в АИС Интернет-провайдера. Пожалуйста, подтвердите ваш адрес электронной почты, перейдя по ссылке ниже:</p>
+    <p><a href="{confirmation_url}">Подтвердить мой email</a></p>
+    <p>Если вы не регистрировались, просто проигнорируйте это письмо.</p>
+    """
+
+    message = MessageSchema(
+        subject="Подтверждение регистрации в АИС",
+        recipients=[email_to],
+        body=html_content,
+        subtype="html"
+    )
+
+    fm = FastMail(conf)
+    await fm.send_message(message)
 
 
 async def get_subscriber_by_phone(phone: str):
@@ -11,35 +52,25 @@ async def get_subscriber_by_phone(phone: str):
     return subscriber
 
 
-async def verify_subscriber_credentials(phone: str, password: str):
+async def verify_subscriber_credentials(email: str, password: str):
     """
-    Проверяет, существует ли абонент с таким телефоном и верен ли пароль.
-    """
-    subscriber = await get_subscriber_by_phone(phone)
-    if not subscriber or not subscriber['password_hash']:
-        return None
-
-    if not verify_password(password, subscriber['password_hash']):
-        return None
-
-    return subscriber
-
-
-async def get_subscriber_contracts(subscriber_id: int):
-    """
-    Получает все договоры для конкретного абонента (без изменений).
+    Проверяет, существует ли абонент с таким email, верен ли пароль и подтвержден ли аккаунт.
+    Возвращает словарь с ошибкой или запись пользователя.
     """
     conn = await get_db_connection()
-    query = """
-    SELECT c.contract_id, c.start_date, c.status, s.name as service_name, s.price
-    FROM contracts c
-    JOIN services s ON c.service_id = s.service_id
-    WHERE c.subscriber_id = $1
-    ORDER BY c.start_date DESC
-    """
-    contracts = await conn.fetch(query, subscriber_id)
+    subscriber = await conn.fetchrow("SELECT * FROM subscribers WHERE email = $1", email)
     await conn.close()
-    return contracts
+
+    if not subscriber or not verify_password(password, subscriber['password_hash']):
+        return {"error": "Неверный email или пароль."}
+
+    if not subscriber['is_confirmed']:
+        # Можно добавить логику повторной отправки письма, но пока просто сообщим
+        return {"error": "Ваш аккаунт не подтвержден. Проверьте свою электронную почту (включая папку 'Спам')."}
+
+    # Если все проверки пройдены, возвращаем пользователя
+    return dict(subscriber)
+
 
 async def get_subscriber_payments(subscriber_id: int):
     """
@@ -103,24 +134,56 @@ async def update_subscriber_contact_info(subscriber_id: int, full_name: str, add
     await conn.close()
     return {"success": True}
 
-async def create_new_subscriber(full_name: str, address: str, phone: str, password: str):
-    """
-    Регистрирует нового абонента в системе.
-    """
-    # Проверяем, не занят ли уже номер телефона
-    existing_subscriber = await get_subscriber_by_phone(phone)
-    if existing_subscriber:
-        return None  # Возвращаем None, если телефон уже используется
 
-    # Хешируем пароль перед сохранением
-    hashed_pass = hash_password(password)
-
+async def create_new_subscriber(full_name: str, address: str, phone: str, password: str, email: str):
+    """
+    Регистрирует нового абонента, но не активирует его до подтверждения email.
+    """
     conn = await get_db_connection()
+    # Проверяем, не занят ли уже email
+    existing_by_email = await conn.fetchrow("SELECT subscriber_id FROM subscribers WHERE email = $1", email)
+    if existing_by_email:
+        await conn.close()
+        return {"error": "Этот email уже зарегистрирован."}
+
+    # Проверяем, не занят ли уже номер телефона
+    existing_by_phone = await conn.fetchrow("SELECT subscriber_id FROM subscribers WHERE phone_number = $1", phone)
+    if existing_by_phone:
+        await conn.close()
+        return {"error": "Этот номер телефона уже зарегистрирован."}
+
+    hashed_pass = hash_password(password)
+    confirmation_token = secrets.token_urlsafe(32)
+
     query = """
-    INSERT INTO subscribers (full_name, address, phone_number, password_hash, balance)
-    VALUES ($1, $2, $3, $4, 0.00)
+    INSERT INTO subscribers (full_name, address, phone_number, password_hash, balance, email, is_confirmed, confirmation_token)
+    VALUES ($1, $2, $3, $4, 0.00, $5, FALSE, $6)
     RETURNING *
     """
-    new_subscriber = await conn.fetchrow(query, full_name, address, phone, hashed_pass)
+    new_subscriber = await conn.fetchrow(query, full_name, address, phone, hashed_pass, email, confirmation_token)
     await conn.close()
-    return new_subscriber
+
+    if new_subscriber:
+        # Отправляем письмо только если пользователь успешно создан
+        await send_confirmation_email(email, confirmation_token)
+        return dict(new_subscriber)
+
+    return None
+
+
+async def update_subscriber_avatar(subscriber_id: int, file: UploadFile):
+    """
+    Обновляет аватар абонента.
+    """
+    # 1. Сохраняем новый файл и получаем его имя
+    avatar_filename = await save_avatar(file, subscriber_id)
+
+    # 2. Обновляем запись в базе данных
+    conn = await get_db_connection()
+    await conn.execute(
+        "UPDATE subscribers SET avatar_url = $1 WHERE subscriber_id = $2",
+        avatar_filename, subscriber_id
+    )
+    await conn.close()
+
+    return {"success": True, "avatar_url": avatar_filename}

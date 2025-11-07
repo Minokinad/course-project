@@ -8,6 +8,33 @@
     <div class="col-md-9">
         <h1 class="h3 mb-4">Редактирование профиля</h1>
 
+        <div class="card mb-4">
+            <div class="card-body text-center">
+                {% if subscriber.avatar_url %}
+                    <img src="/uploads/avatars/{{ subscriber.avatar_url }}"
+                         alt="Текущий аватар"
+                         class="img-thumbnail rounded-circle mb-3"
+                         width="150" height="150"
+                         style="object-fit: cover;">
+                {% else %}
+                    <div class="text-muted mb-3">
+                        <i class="bi bi-person-circle" style="font-size: 150px;"></i>
+                    </div>
+                {% endif %}
+
+                <h5 class="card-title">Изменить фотографию профиля</h5>
+
+                <!-- Форма для загрузки аватара -->
+                <form action="/subscriber/edit/avatar" method="post" enctype="multipart/form-data">
+                    <div class="input-group">
+                        <input type="file" class="form-control" name="avatar" accept="image/png, image/jpeg, image/gif" required>
+                        <button class="btn btn-primary" type="submit">Загрузить</button>
+                    </div>
+                    <div class="form-text">Поддерживаемые форматы: JPG, PNG, GIF.</div>
+                </form>
+            </div>
+        </div>
+
         {% if error %}
         <div class="alert alert-danger">{{ error }}</div>
         {% endif %}
@@ -23,7 +50,15 @@
             </div>
             <div class="mb-3">
                 <label for="phone_number" class="form-label">Номер телефона</label>
-                <input type="text" class="form-control" id="phone_number" name="phone_number" value="{{ subscriber.phone_number }}" required>
+                <input
+                    type="tel"
+                    class="form-control"
+                    id="phone_number"
+                    name="phone_number"
+                    value="{{ subscriber.phone_number }}"
+                    required
+                    pattern="\+?[0-9]+"
+                    title="Номер телефона может содержать только цифры и знак '+' в начале.">
             </div>
 
             <button type="submit" class="btn btn-success">Сохранить изменения</button>

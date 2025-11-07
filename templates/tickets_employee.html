@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Заявки от абонентов</h1>
+</div>
+
+<div class="d-flex justify-content-start mb-3">
+    <div class="btn-group" role="group">
+        <a href="/tickets" class="btn {% if not current_status %}btn-primary{% else %}btn-outline-primary{% endif %}">Все</a>
+        <a href="/tickets?status=Новая" class="btn {% if current_status == 'Новая' %}btn-primary{% else %}btn-outline-primary{% endif %}">Новые</a>
+        <a href="/tickets?status=В работе" class="btn {% if current_status == 'В работе' %}btn-primary{% else %}btn-outline-primary{% endif %}">В работе</a>
+        <a href="/tickets?status=Закрыта" class="btn {% if current_status == 'Закрыта' %}btn-primary{% else %}btn-outline-primary{% endif %}">Закрытые</a>
+    </div>
+</div>
+
+<table class="table table-hover">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Тема</th>
+            <th>Абонент</th>
+            <th>Исполнитель</th>
+            <th>Статус</th>
+            <th>Создана</th>
+            <th>Обновлена</th>
+            <th>Действия</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for ticket in tickets %}
+        <tr>
+            <td>{{ ticket.ticket_id }}</td>
+            <td>{{ ticket.title }}</td>
+            <td><a href="/subscribers/{{ ticket.subscriber_id }}">{{ ticket.subscriber_name }}</a></td>
+            <td>{{ ticket.assignee_name or 'Не назначен' }}</td>
+            <td>
+                <span class="badge 
+                    {% if ticket.status == 'Новая' %}bg-primary
+                    {% elif ticket.status == 'В работе' %}bg-warning text-dark
+                    {% elif ticket.status == 'Закрыта' %}bg-secondary
+                    {% endif %}">
+                    {{ ticket.status }}
+                </span>
+            </td>
+            <td>{{ ticket.created_at.strftime('%d.%m.%Y %H:%M') }}</td>
+            <td>{{ ticket.updated_at.strftime('%d.%m.%Y %H:%M') }}</td>
+            <td>
+                <a href="/tickets/{{ ticket.ticket_id }}" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-pencil-square"></i> Управлять
+                </a>
+            </td>
+        </tr>
+    {% else %}
+        <tr>
+            <td colspan="8" class="text-center">Нет заявок, соответствующих фильтру.</td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

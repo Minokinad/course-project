@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-3">
+        {% include 'partials/subscriber_menu.html' %}
+    </div>
+    <div class="col-md-9">
+        <h1 class="h3 mb-4">Новая заявка</h1>
+        <form action="/subscriber/tickets/new" method="post">
+            <div class="mb-3">
+                <label for="title" class="form-label">Тема</label>
+                <input type="text" class="form-control" id="title" name="title" placeholder="Например: Низкая скорость интернета" required>
+            </div>
+            <div class="mb-3">
+                <label for="description" class="form-label">Описание проблемы</label>
+                <textarea class="form-control" id="description" name="description" rows="6" placeholder="Опишите вашу проблему как можно подробнее..."></textarea>
+            </div>
+            <button type="submit" class="btn btn-success">Отправить заявку</button>
+            <a href="/subscriber/tickets" class="btn btn-secondary">Отмена</a>
+        </form>
+    </div>
+</div>
+{% endblock %}

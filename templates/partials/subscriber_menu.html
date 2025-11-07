@@ -2,11 +2,19 @@
     <a href="/subscriber/cabinet" class="list-group-item list-group-item-action {% if active_page == 'cabinet' %}active{% endif %}">
         <i class="bi bi-person-badge-fill me-2"></i>Главная
     </a>
+    <a href="/subscriber/tickets" class="list-group-item list-group-item-action {% if active_page == 'tickets' %}active{% endif %}">
+        <i class="bi bi-ticket-detailed-fill me-2"></i>Мои заявки
+    </a>
     <a href="/subscriber/payments" class="list-group-item list-group-item-action {% if active_page == 'payments' %}active{% endif %}">
         <i class="bi bi-wallet2 me-2"></i>История платежей
     </a>
-    <a href="/subscriber/notifications" class="list-group-item list-group-item-action {% if active_page == 'notifications' %}active{% endif %}">
-        <i class="bi bi-bell-fill me-2"></i>Уведомления
+    <a href="/subscriber/notifications" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center {% if active_page == 'notifications' %}active{% endif %}">
+        <div>
+            <i class="bi bi-bell-fill me-2"></i>Уведомления
+        </div>
+        {% if request.state.unread_notifications > 0 %}
+            <span class="badge bg-danger rounded-pill">{{ request.state.unread_notifications }}</span>
+        {% endif %}
     </a>
     <a href="/subscriber/edit" class="list-group-item list-group-item-action {% if active_page == 'edit' %}active{% endif %}">
         <i class="bi bi-pencil-square me-2"></i>Редактировать профиль

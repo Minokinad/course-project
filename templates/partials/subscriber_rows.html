@@ -1,19 +1,37 @@
 {% for sub in subscribers %}
-<tr>
+<tr id="subscriber-row-{{ sub.subscriber_id }}">
+    <td>
+        {% if sub.avatar_url %}
+            <img src="/uploads/avatars/{{ sub.avatar_url }}"
+                 alt="Аватар"
+                 class="rounded-circle"
+                 width="40" height="40"
+                 style="object-fit: cover;">
+        {% else %}
+            <div class="text-muted">
+                <i class="bi bi-person-circle" style="font-size: 24px;"></i>
+            </div>
+        {% endif %}
+    </td>
     <td>{{ sub.subscriber_id }}</td>
     <td>{{ sub.full_name }}</td>
     <td>{{ sub.address }}</td>
     <td>{{ sub.phone_number }}</td>
     <td>{{ "%.2f"|format(sub.balance) }}</td>
     <td>
+        <a href="/subscribers/{{ sub.subscriber_id }}" class="btn btn-sm btn-outline-primary me-2" title="Просмотр">
+            <i class="bi bi-eye"></i>
+        </a>
+
         {% if request.state.user.role in ['Администратор', 'Менеджер'] %}
-        <a href="/subscribers/{{ sub.subscriber_id }}/edit" class="btn btn-sm btn-outline-secondary me-2">
+        <a href="/subscribers/{{ sub.subscriber_id }}/edit" class="btn btn-sm btn-outline-secondary me-2" title="Редактировать">
             <i class="bi bi-pencil"></i>
         </a>
         {% endif %}
 
         {% if request.state.user.role == 'Администратор' %}
         <button class="btn btn-sm btn-outline-danger"
+                title="Удалить"
                 hx-delete="/subscribers/{{ sub.subscriber_id }}"
                 hx-target="closest tr"
                 hx-swap="outerHTML"

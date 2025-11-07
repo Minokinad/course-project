@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Отчеты</h1>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        Финансовый отчет по платежам
+    </div>
+    <div class="card-body">
+        <form action="/reports" method="get" class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label for="start_date" class="form-label">Дата начала</label>
+                <input type="date" class="form-control" id="start_date" name="start_date" value="{{ start_date }}">
+            </div>
+            <div class="col-md-4">
+                <label for="end_date" class="form-label">Дата окончания</label>
+                <input type="date" class="form-control" id="end_date" name="end_date" value="{{ end_date }}">
+            </div>
+            <div class="col-md-4">
+                <button type="submit" class="btn btn-primary w-100">Сформировать</button>
+            </div>
+        </form>
+
+        <hr>
+
+        <div class="d-flex justify-content-between align-items-center mt-4">
+             <h4 class="mb-0">Результаты за период с {{ start_date.strftime('%d.%m.%Y') }} по {{ end_date.strftime('%d.%m.%Y') }}</h4>
+             <a href="#" id="export-json-btn" class="btn btn-outline-secondary">
+                 <i class="bi bi-box-arrow-down"></i> Экспорт в JSON
+             </a>
+             <a href="#" id="export-excel-btn" class="btn btn-outline-success ms-2">
+                 <i class="bi bi-file-earmark-excel"></i> Экспорт в Excel
+             </a>
+        </div>
+
+        <div class="row mt-3">
+            <div class="col-md-6">
+                <div class="stat-card p-3 bg-light rounded text-center">
+                    <h5>Всего платежей</h5>
+                    <p class="fs-2 fw-bold mb-0">{{ payment_summary.total_payments }}</p>
+                </div>
+            </div>
+             <div class="col-md-6">
+                <div class="stat-card p-3 bg-light rounded text-center">
+                    <h5>Общая сумма</h5>
+                    <p class="fs-2 fw-bold mb-0 text-success">{{ "%.2f"|format(payment_summary.total_amount or 0) }} BYN</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+    <div class="row mt-4">
+    <!-- График 1: Динамика платежей -->
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                Динамика платежей по дням
+            </div>
+            <div class="card-body">
+                <canvas id="dailyDynamicsChart"></canvas>
+            </div>
+        </div>
+    </div>
+    <!-- График 2: Способы оплаты -->
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                Способы оплаты
+            </div>
+            <div class="card-body">
+                <canvas id="paymentMethodsChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const dailyCtx = document.getElementById('dailyDynamicsChart');
+    if (dailyCtx) {
+        new Chart(dailyCtx, {
+            type: 'line',
+            data: {
+                // Передаем данные из Jinja2 в JavaScript
+                labels: {{ daily_dynamics.labels | tojson }},
+                datasets: [{
+                    label: 'Сумма платежей, BYN',
+                    // И здесь
+                    data: {{ daily_dynamics.data | tojson }},
+                    fill: false,
+                    borderColor: 'rgb(75, 192, 192)',
+                    tension: 0.1
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    }
+
+    // === КРУГОВАЯ ДИАГРАММА: СПОСОБЫ ОПЛАТЫ ===
+    const methodsCtx = document.getElementById('paymentMethodsChart');
+    if (methodsCtx) {
+        new Chart(methodsCtx, {
+            type: 'doughnut', // doughnut - это "бублик", pie - "пирог"
+            data: {
+                labels: {{ payment_methods.labels | tojson }},
+                datasets: [{
+                    label: 'Количество платежей',
+                    data: {{ payment_methods.data | tojson }},
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.7)',
+                        'rgba(54, 162, 235, 0.7)',
+                        'rgba(255, 206, 86, 0.7)',
+                        'rgba(75, 192, 192, 0.7)',
+                        'rgba(153, 102, 255, 0.7)',
+                        'rgba(255, 159, 64, 0.7)'
+                    ],
+                    hoverOffset: 4
+                }]
+            }
+        });
+    }
+
+    const startDateInput = document.getElementById('start_date');
+    const endDateInput = document.getElementById('end_date');
+    const exportJsonBtn = document.getElementById('export-json-btn');
+    const exportExcelBtn = document.getElementById('export-excel-btn');
+
+    function updateExportLinks() {
+        const startDate = startDateInput.value;
+        const endDate = endDateInput.value;
+        if (startDate && endDate) {
+            exportJsonBtn.href = `/reports/export/json?start_date=${startDate}&end_date=${endDate}`;
+            exportExcelBtn.href = `/reports/export/excel?start_date=${startDate}&end_date=${endDate}`;
+        }
+    }
+    updateExportLinks();
+    startDateInput.addEventListener('change', updateExportLinks);
+    endDateInput.addEventListener('change', updateExportLinks);
+});
+</script>
+{% endblock %}
+
+{% endblock %}

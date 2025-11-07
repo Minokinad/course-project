@@ -19,11 +19,28 @@
     </div>
     <div class="mb-3">
         <label for="phone_number" class="form-label">Номер телефона</label>
-        <input type="text" class="form-control" id="phone_number" name="phone_number" value="{{ subscriber.phone_number if subscriber else '' }}">
+        <input
+            type="tel"
+            class="form-control"
+            id="phone_number"
+            name="phone_number"
+            value="{{ subscriber.phone_number if subscriber else '' }}"
+            required
+            pattern="\+?[0-9]+"
+            title="Номер телефона может содержать только цифры и знак '+' в начале.">
     </div>
     <div class="mb-3">
         <label for="balance" class="form-label">Баланс</label>
-        <input type="number" step="0.01" class="form-control" id="balance" name="balance" value="{{ subscriber.balance if subscriber else '0.00' }}" required>
+        <input
+            type="number"
+            step="0.01"
+            class="form-control"
+            id="balance"
+            name="balance"
+            value="{{ subscriber.balance if subscriber else '0.00' }}"
+            min="-100.00"
+            max="10000.00"
+            required>
     </div>
 
     <button type="submit" class="btn btn-success">Сохранить</button>

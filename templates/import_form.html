@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3">Импорт абонентов из JSON</h1>
+    <a href="/subscribers" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> К списку абонентов
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <form action="{{ import_url }}" method="post" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label for="file" class="form-label">Выберите JSON файл</label>
+                        <input class="form-control" type="file" id="file" name="file" accept=".json" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-box-arrow-up"></i> Загрузить и импортировать
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <h5 class="mt-4">Требования к формату файла</h5>
+        <p>Файл должен быть в кодировке UTF-8 и содержать JSON-массив (список) объектов, где каждый объект представляет одного абонента. Пример:</p>
+        <pre class="bg-light p-3 rounded"><code>[
+    {
+        "full_name": "Иванов Иван Иванович",
+        "address": "г. Минск, ул. Центральная, д. 1, кв. 5",
+        "phone_number": "+375291112233",
+        "balance": 15.50
+    },
+    {
+        "full_name": "Петрова Мария Сергеевна",
+        "address": "г. Минск, пр. Независимости, д. 10",
+        "phone_number": "+375334445566",
+        "balance": -5.20
+    }
+]</code></pre>
+        <p>Обязательным является только поле <code>full_name</code>. Остальные поля (<code>address</code>, <code>phone_number</code>, <code>balance</code>) опциональны.</p>
+    </div>
+</div>
+{% endblock %}

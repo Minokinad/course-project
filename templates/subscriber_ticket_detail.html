@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-3">
+        {% include 'partials/subscriber_menu.html' %}
+    </div>
+    <div class="col-md-9">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="h3">Заявка #{{ ticket.ticket_id }}: {{ ticket.title }}</h1>
+            <a href="/subscriber/tickets" class="btn btn-secondary btn-sm">
+                <i class="bi bi-arrow-left"></i> К списку заявок
+            </a>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-body">
+                <p><strong>Статус:</strong> <span class="badge {% if ticket.status == 'Новая' %}bg-primary{% elif ticket.status == 'В работе' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">{{ ticket.status }}</span></p>
+                <p><strong>Описание:</strong></p>
+                <p>{{ ticket.description|nl2br }}</p>
+            </div>
+        </div>
+        
+        <!-- Переписка -->
+        <h4 class="mb-3">Переписка</h4>
+        <div class="chat-container mb-4" style="max-height: 400px; overflow-y: auto; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+            {% for message in messages %}
+                {% if message.subscriber_id %}
+                <!-- Сообщение абонента (справа) -->
+                <div class="d-flex justify-content-end mb-3">
+                    <div class="card bg-primary text-white" style="max-width: 70%;">
+                        <div class="card-body p-2">
+                            <p class="card-text small">{{ message.message_text|nl2br }}</p>
+                            <small class="text-white-50">{{ message.created_at.strftime('%d.%m %H:%M') }}</small>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <!-- Сообщение сотрудника (слева) -->
+                <div class="d-flex justify-content-start mb-3">
+                     <div class="card bg-light" style="max-width: 70%;">
+                        <div class="card-body p-2">
+                            <p class="card-text small"><strong>{{ message.author_name }}:</strong><br>{{ message.message_text|nl2br }}</p>
+                            <small class="text-muted">{{ message.created_at.strftime('%d.%m %H:%M') }}</small>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            {% else %}
+                <p class="text-muted">Сообщений пока нет.</p>
+            {% endfor %}
+        </div>
+        
+        <!-- Форма ответа -->
+        {% if ticket.status != 'Закрыта' %}
+        <hr>
+        <h5>Ваш ответ</h5>
+        <form action="/subscriber/tickets/{{ ticket.ticket_id }}/add-message" method="post">
+            <div class="mb-3">
+                <textarea name="message_text" class="form-control" rows="4" required></textarea>
+            </div>
+            <button type="submit" class="btn btn-success">Отправить сообщение</button>
+        </form>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

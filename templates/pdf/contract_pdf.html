@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Договор №{{ contract.contract_id }}</title>
+    <style>
+        @page {
+            margin: 2cm 1.5cm 2cm 3cm;
+        }
+
+        body {
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 14pt;
+            line-height: 1.5;
+            text-align: justify;
+        }
+
+        h1, h2, h3 {
+            text-align: center;
+            font-weight: bold;
+            line-height: 1.2;
+        }
+
+        h1 {
+            font-size: 18pt;
+            margin-bottom: 5px;
+        }
+
+        h2 {
+            font-size: 16pt;
+            margin-bottom: 40px;
+        }
+
+        h3.section-title {
+            font-size: 14pt;
+            margin-top: 25px;
+            margin-bottom: 15px;
+        }
+
+        p {
+            /* Отступ первой строки абзаца (красная строка) */
+            text-indent: 1.25cm;
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+
+        .header {
+            margin-bottom: 30px;
+        }
+        .header-city { float: left; }
+        .header-date { float: right; }
+
+        .preamble {
+            text-indent: 1.25cm;
+        }
+
+        ol {
+            padding-left: 2cm;
+        }
+
+        li {
+            margin-bottom: 10px;
+        }
+
+        .signatures {
+            margin-top: 50px;
+        }
+
+        .signatures table {
+            width: 100%;
+            border: none;
+        }
+
+        .signatures td {
+            width: 50%;
+            vertical-align: top;
+            border: none;
+            padding: 0 15px;
+        }
+
+        .signature-line {
+            border-bottom: 1px solid black;
+            margin-top: 60px;
+            margin-bottom: 5px;
+            width: 250px;
+        }
+
+        .fill-in-line {
+            border-bottom: 1px dotted black;
+        }
+
+        /* Стиль для Акта на новой странице */
+        .page-break {
+            page-break-before: always;
+        }
+    </style>
+</head>
+<body>
+    <h1>ДОГОВОР № {{ contract.contract_id }}</h1>
+    <h2>на оказание услуг электросвязи</h2>
+
+    <div class="header">
+        <div class="header-city">г. Минск</div>
+        <div class="header-date">«{{ contract.start_date.day }}» {{ months[contract.start_date.month] }} {{ contract.start_date.year }} г.</div>
+    </div>
+    <br style="clear: both;"/>
+
+    <p class="preamble">
+        <strong>{{ provider.name }}</strong>, именуемое в дальнейшем «Оператор», в лице директора Иванова Ивана Ивановича, действующего на основании Устава, с одной стороны, и гражданин(ка) <strong>{{ contract.subscriber_name }}</strong>, именуемый(ая) в дальнейшем «Абонент», с другой стороны, совместно именуемые «Стороны», заключили настоящий Договор о нижеследующем:
+    </p>
+
+    <h3 class="section-title">1. ПРЕДМЕТ ДОГОВОРА</h3>
+    <p>1.1. Оператор обязуется оказывать Абоненту услуги электросвязи по передаче данных (далее – Услуги) в соответствии с заказанным тарифным планом, а Абонент обязуется принимать и оплачивать эти Услуги на условиях настоящего Договора.</p>
+    <p>1.2. Адрес предоставления Услуг: {{ contract.subscriber_address }}.</p>
+    <p>1.3. Тарифный план: «{{ contract.service_name }}». Основные характеристики тарифного плана и его стоимость указаны в Приложении №1 к настоящему Договору, являющемся его неотъемлемой частью.</p>
+
+    <h3 class="section-title">2. ПРАВА И ОБЯЗАННОСТИ СТОРОН</h3>
+    <p>2.1. Оператор обязуется:</p>
+    <ol type="a">
+        <li>Оказывать Абоненту Услуги 24 часа в сутки, 7 дней в неделю, за исключением времени проведения необходимых профилактических и ремонтных работ.</li>
+        <li>Обеспечивать качество Услуг в соответствии с действующими в Республике Беларусь нормами и стандартами.</li>
+        <li>Устранять неисправности, препятствующие пользованию Услугами, в сроки, установленные законодательством.</li>
+    </ol>
+    <p>2.2. Абонент обязуется:</p>
+    <ol type="a">
+        <li>Своевременно и в полном объеме производить оплату Услуг в соответствии с разделом 3 настоящего Договора.</li>
+        <li>Использовать Услуги только в законных целях и не передавать свои права по Договору третьим лицам без письменного согласия Оператора.</li>
+    </ol>
+
+    <h3 class="section-title">3. СТОИМОСТЬ УСЛУГ И ПОРЯДОК РАСЧЕТОВ</h3>
+    <p>3.1. Стоимость Услуг определяется действующими тарифами Оператора на момент оказания Услуг. Абонентская плата по тарифному плану «{{ contract.service_name }}» составляет <strong>{{ "%.2f"|format(contract.price) }} ({{ contract.price | int }} белорусских рублей {{ (contract.price * 100) % 100 }} копеек)</strong> в месяц.</p>
+    <p>3.2. Расчетный период составляет один календарный месяц. Оплата Услуг производится Абонентом на условиях предоплаты путем пополнения своего лицевого счета до 1-го числа расчетного периода.</p>
+    <p>3.3. При отрицательном балансе лицевого счета Оператор вправе приостановить оказание Услуг до момента пополнения баланса.</p>
+
+    <h3 class="section-title">4. СРОК ДЕЙСТВИЯ ДОГОВОРА</h3>
+    <p>4.1. Настоящий Договор вступает в силу с момента его подписания Сторонами и действует в течение одного года.</p>
+    <p>4.2. Если ни одна из Сторон за 30 (тридцать) календарных дней до истечения срока действия Договора письменно не уведомит другую Сторону о своем намерении его расторгнуть, Договор считается продленным на каждый последующий календарный год на тех же условиях.</p>
+
+    <h3 class="section-title">5. РЕКВИЗИТЫ И ПОДПИСИ СТОРОН</h3>
+    <div class="signatures">
+        <table>
+            <tr>
+                <td><strong>ОПЕРАТОР</strong></td>
+                <td><strong>АБОНЕНТ</strong></td>
+            </tr>
+            <tr>
+                <td>
+                    <p style="text-indent: 0;">{{ provider.name }}</p>
+                    <p style="text-indent: 0;">Адрес: {{ provider.address }}</p>
+                    <p style="text-indent: 0;">УНП {{ provider.unp }}</p>
+                    <p style="text-indent: 0;">Р/с {{ provider.bank_account }} в {{ provider.bank_name }}, код {{ provider.bank_code }}</p>
+                    <br>
+                    <p style="text-indent: 0;">Директор</p>
+                    <div class="signature-line"></div>
+                    <p style="text-indent: 0;">Д. С. Ивашевич</p>
+                </td>
+                <td>
+                    <p style="text-indent: 0;">{{ contract.subscriber_name }}</p>
+                    <p style="text-indent: 0;">Адрес регистрации:</p>
+                    <p style="text-indent: 0;">{{ contract.subscriber_address }}</p>
+                    <p style="text-indent: 0;">Паспортные данные:</p>
+                    <div class="fill-in-line" style="height: 1.5em; width: 100%;"></div>
+                    <div class="fill-in-line" style="height: 1.5em; width: 100%;"></div>
+                    <br>
+                    <div class="signature-line"></div>
+                    <p style="text-indent: 0;">{{ contract.subscriber_name.split(' ')[0] }}. {{ contract.subscriber_name.split(' ')[1][0] }}. {{ contract.subscriber_name.split(' ')[2] }}</p>
+                </td>
+            </tr>
+        </table>
+    </div>
+</body>
+</html>
