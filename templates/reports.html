@@ -53,29 +53,103 @@
     </div>
 </div>
 
+    <div class="row mt-4">
+    <!-- График 1: Динамика платежей -->
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                Динамика платежей по дням
+            </div>
+            <div class="card-body">
+                <canvas id="dailyDynamicsChart"></canvas>
+            </div>
+        </div>
+    </div>
+    <!-- График 2: Способы оплаты -->
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                Способы оплаты
+            </div>
+            <div class="card-body">
+                <canvas id="paymentMethodsChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+{% block scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', () => {
+    const dailyCtx = document.getElementById('dailyDynamicsChart');
+    if (dailyCtx) {
+        new Chart(dailyCtx, {
+            type: 'line',
+            data: {
+                // Передаем данные из Jinja2 в JavaScript
+                labels: {{ daily_dynamics.labels | tojson }},
+                datasets: [{
+                    label: 'Сумма платежей, BYN',
+                    // И здесь
+                    data: {{ daily_dynamics.data | tojson }},
+                    fill: false,
+                    borderColor: 'rgb(75, 192, 192)',
+                    tension: 0.1
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    }
+
+    // === КРУГОВАЯ ДИАГРАММА: СПОСОБЫ ОПЛАТЫ ===
+    const methodsCtx = document.getElementById('paymentMethodsChart');
+    if (methodsCtx) {
+        new Chart(methodsCtx, {
+            type: 'doughnut', // doughnut - это "бублик", pie - "пирог"
+            data: {
+                labels: {{ payment_methods.labels | tojson }},
+                datasets: [{
+                    label: 'Количество платежей',
+                    data: {{ payment_methods.data | tojson }},
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.7)',
+                        'rgba(54, 162, 235, 0.7)',
+                        'rgba(255, 206, 86, 0.7)',
+                        'rgba(75, 192, 192, 0.7)',
+                        'rgba(153, 102, 255, 0.7)',
+                        'rgba(255, 159, 64, 0.7)'
+                    ],
+                    hoverOffset: 4
+                }]
+            }
+        });
+    }
+
     const startDateInput = document.getElementById('start_date');
     const endDateInput = document.getElementById('end_date');
     const exportJsonBtn = document.getElementById('export-json-btn');
-    const exportExcelBtn = document.getElementById('export-excel-btn'); // Находим новую кнопку
+    const exportExcelBtn = document.getElementById('export-excel-btn');
 
     function updateExportLinks() {
         const startDate = startDateInput.value;
         const endDate = endDateInput.value;
         if (startDate && endDate) {
-            // Обновляем обе ссылки
             exportJsonBtn.href = `/reports/export/json?start_date=${startDate}&end_date=${endDate}`;
             exportExcelBtn.href = `/reports/export/excel?start_date=${startDate}&end_date=${endDate}`;
         }
     }
-
-    // Устанавливаем ссылки при загрузке страницы
     updateExportLinks();
-
-    // Обновляем ссылки при изменении дат
     startDateInput.addEventListener('change', updateExportLinks);
     endDateInput.addEventListener('change', updateExportLinks);
 });
 </script>
+{% endblock %}
+
 {% endblock %}

@@ -11,18 +11,26 @@ from src.auth.dependencies import require_admin
 from src.templating import templates
 
 router = APIRouter(prefix="/reports", tags=["Reports"], dependencies=[Depends(require_admin)])
+
+
 @router.get("", response_class=HTMLResponse)
 async def reports_page(
-    request: Request,
-    start_date: date = Query(date.today() - timedelta(days=30)),
-    end_date: date = Query(date.today())
+        request: Request,
+        start_date: date = Query(date.today() - timedelta(days=30)),
+        end_date: date = Query(date.today())
 ):
     payment_summary = await report_service.get_payment_summary(start_date, end_date)
+
+    daily_dynamics = await report_service.get_daily_payment_dynamics(start_date, end_date)
+    payment_methods = await report_service.get_payment_methods_distribution(start_date, end_date)
+
     return templates.TemplateResponse("reports.html", {
         "request": request,
         "start_date": start_date,
         "end_date": end_date,
         "payment_summary": payment_summary,
+        "daily_dynamics": daily_dynamics,
+        "payment_methods": payment_methods,
         "active_page": "reports"
     })
 
