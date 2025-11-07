@@ -5,27 +5,32 @@ from fastapi.templating import Jinja2Templates
 
 from src.services import equipment_service
 from src.auth.dependencies import require_tech
+from src.templating import templates
 
 router = APIRouter(prefix="/equipment", tags=["Equipment"], dependencies=[Depends(require_tech)])
-templates = Jinja2Templates(directory="templates")
-
 
 @router.get("", response_class=HTMLResponse)
 async def list_equipment_page(
     request: Request,
     sort_by: Optional[str] = Query(None),
-    order: Optional[str] = Query('asc')
+    order: Optional[str] = Query('asc'),
+    status: Optional[str] = Query(None),
+    type: Optional[str] = Query(None)
 ):
-    """
-    Отображает страницу со списком всего оборудования.
-    """
-    equipment = await equipment_service.fetch_all_equipment(sort_by=sort_by, order=order)
+    equipment = await equipment_service.fetch_all_equipment(
+        sort_by=sort_by, order=order, status_filter=status, type_filter=type
+    )
+    unique_types = await equipment_service.fetch_unique_equipment_types()
+
     return templates.TemplateResponse("equipment.html", {
         "request": request,
         "equipment": equipment,
+        "unique_types": unique_types,
         "active_page": "equipment",
         "sort_by": sort_by,
-        "order": order
+        "order": order,
+        "current_status": status,
+        "current_type": type
     })
 
 @router.get("/new", response_class=HTMLResponse)

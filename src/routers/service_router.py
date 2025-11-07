@@ -1,13 +1,12 @@
 from typing import Optional
 from fastapi import APIRouter, Request, Depends, Form, Query
 from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.templating import Jinja2Templates
 
 from src.services import service_service
 from src.auth.dependencies import require_tech, require_admin
+from src.templating import templates
 
 router = APIRouter(prefix="/services", tags=["Services"], dependencies=[Depends(require_tech)])
-templates = Jinja2Templates(directory="templates")
 
 
 @router.get("", response_class=HTMLResponse)

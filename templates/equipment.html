@@ -8,13 +8,57 @@
     </a>
 </div>
 
+<div class="card bg-light mb-4">
+    <div class="card-body">
+        <form action="/equipment" method="get" class="row g-3 align-items-end">
+
+            {% if sort_by %}
+                <input type="hidden" name="sort_by" value="{{ sort_by }}">
+                <input type="hidden" name="order" value="{{ order }}">
+            {% endif %}
+
+            <div class="col-md-4">
+                <label for="status" class="form-label">Статус</label>
+                <select name="status" id="status" class="form-select">
+                    <option value="">Все статусы</option>
+                    {% set statuses = ['На складе', 'У абонента', 'В ремонте', 'Списано'] %}
+                    {% for s in statuses %}
+                        <option value="{{ s }}" {% if current_status == s %}selected{% endif %}>{{ s }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label for="type" class="form-label">Тип</label>
+                <select name="type" id="type" class="form-select">
+                    <option value="">Все типы</option>
+                    {% for t in unique_types %}
+                        <option value="{{ t }}" {% if current_type == t %}selected{% endif %}>{{ t }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4 d-flex">
+                <button type="submit" class="btn btn-primary me-2 flex-grow-1">Применить</button>
+                <a href="/equipment" class="btn btn-secondary flex-grow-1">Сбросить</a>
+            </div>
+        </form>
+    </div>
+</div>
+
 <table class="table table-striped table-hover">
     <thead>
     <tr>
         {% macro sort_th(column, display_name) %}
         <th>
             {% set next_order = 'desc' if sort_by == column and order == 'asc' else 'asc' %}
-            <a href="?sort_by={{ column }}&order={{ next_order }}" class="text-decoration-none text-dark">
+
+            {% set query_params = {
+                'sort_by': column,
+                'order': next_order
+            } %}
+            {% if current_status %}{% do query_params.update({'status': current_status}) %}{% endif %}
+            {% if current_type %}{% do query_params.update({'type': current_type}) %}{% endif %}
+
+            <a href="{{ url_for('list_equipment_page').include_query_params(**query_params) }}" class="text-decoration-none text-dark">
                 {{ display_name }}
                 {% if sort_by == column %}
                     <i class="bi bi-arrow-{{ 'down' if order == 'asc' else 'up' }}"></i>

@@ -27,15 +27,35 @@
 </div>
 {% endif %}
 
+<div class="card bg-light mb-4">
+    <div class="card-body">
+        <form action="/subscribers" method="get" class="row g-3">
 
-<!-- ... остальной код такой же ... -->
-<div class="mb-3">
-    <input type="text" class="form-control" name="search_query" placeholder="Поиск по ФИО, адресу или телефону..."
-           hx-post="/subscribers/search"
-           hx-trigger="keyup changed delay:500ms"
-           hx-target="#subscribers-table-body"
-           hx-indicator="#loading-indicator">
+            {% if sort_by %}
+                <input type="hidden" name="sort_by" value="{{ sort_by }}">
+                <input type="hidden" name="order" value="{{ order }}">
+            {% endif %}
+
+            <div class="col-md-8">
+                <input type="text" class="form-control" name="search_query" placeholder="Поиск по ФИО, адресу или телефону..."
+                       hx-post="/subscribers/search"
+                       hx-trigger="keyup changed delay:500ms"
+                       hx-target="#subscribers-table-body"
+                       hx-indicator="#loading-indicator"
+                       value="{{ request.query_params.get('search_query', '') }}">
+            </div>
+            <div class="col-md-4">
+                <select name="balance_filter" class="form-select" onchange="this.form.submit()">
+                    <option value="" {% if not current_balance_filter %}selected{% endif %}>Все абоненты</option>
+                    <option value="debtors" {% if current_balance_filter == 'debtors' %}selected{% endif %}>Только должники</option>
+                    <option value="positive" {% if current_balance_filter == 'positive' %}selected{% endif %}>С положительным балансом</option>
+                </select>
+            </div>
+        </form>
+    </div>
 </div>
+
+
 <div id="loading-indicator" class="htmx-indicator spinner-border spinner-border-sm" role="status">
     <span class="visually-hidden">Загрузка...</span>
 </div>
@@ -46,7 +66,16 @@
         {% macro sort_th(column, display_name) %}
         <th>
             {% set next_order = 'desc' if sort_by == column and order == 'asc' else 'asc' %}
-            <a href="?sort_by={{ column }}&order={{ next_order }}" class="text-decoration-none text-dark">
+
+            {% set query_params = {
+                'sort_by': column,
+                'order': next_order
+            } %}
+            {% if current_balance_filter %}{% do query_params.update({'balance_filter': current_balance_filter}) %}{% endif %}
+
+            {% if request.query_params.get('search_query') %}{% do query_params.update({'search_query': request.query_params.get('search_query')}) %}{% endif %}
+
+            <a href="{{ url_for('list_subscribers_page').include_query_params(**query_params) }}" class="text-decoration-none text-dark">
                 {{ display_name }}
                 {% if sort_by == column %}
                     <i class="bi bi-arrow-{{ 'down' if order == 'asc' else 'up' }}"></i>
@@ -54,6 +83,7 @@
             </a>
         </th>
         {% endmacro %}
+
         {{ sort_th('subscriber_id', 'ID') }}
         {{ sort_th('full_name', 'ФИО') }}
         {{ sort_th('address', 'Адрес') }}

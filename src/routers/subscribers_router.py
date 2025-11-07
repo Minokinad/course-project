@@ -8,9 +8,9 @@ from fastapi.templating import Jinja2Templates
 
 from src.services import subscriber_service, contract_service
 from src.auth.dependencies import require_manager, require_admin, require_tech
+from src.templating import templates
 
 router = APIRouter(prefix="/subscribers", tags=["Subscribers"], dependencies=[Depends(require_tech)])
-templates = Jinja2Templates(directory="templates")
 
 
 
@@ -18,16 +18,20 @@ templates = Jinja2Templates(directory="templates")
 async def list_subscribers_page(
     request: Request,
     sort_by: Optional[str] = Query(None),
-    order: Optional[str] = Query('asc')
+    order: Optional[str] = Query('asc'),
+    balance_filter: Optional[str] = Query(None)
 ):
-    subscribers = await subscriber_service.fetch_all_subscribers(sort_by=sort_by, order=order)
+    subscribers = await subscriber_service.fetch_all_subscribers(
+        sort_by=sort_by, order=order, balance_filter=balance_filter
+    )
     return templates.TemplateResponse("subscribers.html", {
         "request": request,
         "subscribers": subscribers,
         "active_page": "subscribers",
-        "message": request.query_params.get("message"), # Для сообщений после импорта
+        "message": request.query_params.get("message"),
         "sort_by": sort_by,
-        "order": order
+        "order": order,
+        "current_balance_filter": balance_filter
     })
 
 @router.post("/search", response_class=HTMLResponse)

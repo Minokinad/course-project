@@ -5,9 +5,9 @@ from fastapi.templating import Jinja2Templates
 
 from src.services import employee_service
 from src.auth.dependencies import require_admin
+from src.templating import templates
 
 router = APIRouter(prefix="/employees", tags=["Employees"], dependencies=[Depends(require_admin)])
-templates = Jinja2Templates(directory="templates")
 
 @router.get("", response_class=HTMLResponse)
 async def list_employees_page(

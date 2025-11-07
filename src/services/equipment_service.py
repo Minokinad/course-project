@@ -2,7 +2,12 @@ from typing import Optional
 from src.db.connection import get_db_connection
 
 
-async def fetch_all_equipment(sort_by: Optional[str] = None, order: Optional[str] = 'asc'):
+async def fetch_all_equipment(
+    sort_by: Optional[str] = None,
+    order: Optional[str] = 'asc',
+    status_filter: Optional[str] = None,
+    type_filter: Optional[str] = None
+):
     """
     Получает список всего оборудования в системе.
     Если оборудование привязано к договору, также возвращает имя абонента.
@@ -17,23 +22,37 @@ async def fetch_all_equipment(sort_by: Optional[str] = None, order: Optional[str
         "subscriber_name": "subscriber_name"
     }
 
-    query = """
-    SELECT
-        e.equipment_id, e.type, e.serial_number, e.status, e.contract_id,
-        s.subscriber_id, s.full_name as subscriber_name
-    FROM equipment e
-    LEFT JOIN contracts c ON e.contract_id = c.contract_id
-    LEFT JOIN subscribers s ON c.subscriber_id = s.subscriber_id
-    """
+    query_parts = ["""
+        SELECT
+            e.equipment_id, e.type, e.serial_number, e.status, e.contract_id,
+            s.subscriber_id, s.full_name as subscriber_name
+        FROM equipment e
+        LEFT JOIN contracts c ON e.contract_id = c.contract_id
+        LEFT JOIN subscribers s ON c.subscriber_id = s.subscriber_id
+        """]
+    params = []
+    where_clauses = []
 
-    order_by_clause = "ORDER BY e.equipment_id"  # Сортировка по умолчанию
+    if status_filter:
+        params.append(status_filter)
+        where_clauses.append(f"e.status = ${len(params)}")
+
+    if type_filter:
+        params.append(type_filter)
+        where_clauses.append(f"e.type = ${len(params)}")
+
+    if where_clauses:
+        query_parts.append("WHERE " + " AND ".join(where_clauses))
+
+    order_by_clause = "ORDER BY e.equipment_id"
     if sort_by in allowed_sort_columns:
         order_direction = "DESC" if order == 'desc' else "ASC"
         order_by_clause = f"ORDER BY {allowed_sort_columns[sort_by]} {order_direction}"
 
-    query += f" {order_by_clause}"
+    query_parts.append(f" {order_by_clause}")
 
-    rows = await conn.fetch(query)
+    final_query = " ".join(query_parts)
+    rows = await conn.fetch(final_query, *params)
     await conn.close()
     return rows
 
@@ -113,3 +132,9 @@ async def fetch_available_contracts_for_linking(current_contract_id: Optional[in
 
     await conn.close()
     return rows
+
+async def fetch_unique_equipment_types():
+    conn = await get_db_connection()
+    rows = await conn.fetch("SELECT DISTINCT type FROM equipment ORDER BY type")
+    await conn.close()
+    return [row['type'] for row in rows]

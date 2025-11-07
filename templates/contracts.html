@@ -10,13 +10,59 @@
     {% endif %}
 </div>
 
+<div class="card bg-light mb-4">
+    <div class="card-body">
+        <form action="/contracts" method="get" class="row g-3 align-items-end">
+
+            {% if sort_by %}
+                <input type="hidden" name="sort_by" value="{{ sort_by }}">
+                <input type="hidden" name="order" value="{{ order }}">
+            {% endif %}
+
+            <div class="col-md-4">
+                <label for="status" class="form-label">Статус</label>
+                <select name="status" id="status" class="form-select">
+                    <option value="">Все статусы</option>
+                    {% set statuses = ['Активен', 'Приостановлен', 'Расторгнут', 'Ожидает активации'] %}
+                    {% for s in statuses %}
+                        <option value="{{ s }}" {% if current_status == s %}selected{% endif %}>{{ s }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label for="service_id" class="form-label">Услуга</label>
+                <select name="service_id" id="service_id" class="form-select">
+                    <option value="">Все услуги</option>
+                    {% for srv in services %}
+                        <option value="{{ srv.service_id }}" {% if current_service_id == srv.service_id %}selected{% endif %}>
+                            {{ srv.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4 d-flex">
+                <button type="submit" class="btn btn-primary me-2 flex-grow-1">Применить</button>
+                <a href="/contracts" class="btn btn-secondary flex-grow-1">Сбросить</a>
+            </div>
+        </form>
+    </div>
+</div>
+
 <table class="table table-striped table-hover">
     <thead>
     <tr>
         {% macro sort_th(column, display_name) %}
         <th>
             {% set next_order = 'desc' if sort_by == column and order == 'asc' else 'asc' %}
-            <a href="?sort_by={{ column }}&order={{ next_order }}" class="text-decoration-none text-dark">
+
+            {% set query_params = {
+                'sort_by': column,
+                'order': next_order
+            } %}
+            {% if current_status %}{% do query_params.update({'status': current_status}) %}{% endif %}
+            {% if current_service_id %}{% do query_params.update({'service_id': current_service_id}) %}{% endif %}
+
+            <a href="{{ url_for('list_contracts_page').include_query_params(**query_params) }}" class="text-decoration-none text-dark">
                 {{ display_name }}
                 {% if sort_by == column %}
                     <i class="bi bi-arrow-{{ 'down' if order == 'asc' else 'up' }}"></i>

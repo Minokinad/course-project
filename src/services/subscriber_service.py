@@ -3,23 +3,44 @@ from src.db.connection import get_db_connection
 from src.services.log_service import log_action
 
 
-async def fetch_all_subscribers(sort_by: Optional[str] = None, order: Optional[str] = 'asc'):
+async def fetch_all_subscribers(
+    sort_by: Optional[str] = None,
+    order: Optional[str] = 'asc',
+    balance_filter: Optional[str] = None
+):
     """
-    Получает список всех абонентов с возможностью сортировки.
+    Получает список всех абонентов с возможностью сортировки и фильтрации.
     """
     conn = await get_db_connection()
-
     allowed_sort_columns = ["subscriber_id", "full_name", "address", "phone_number", "balance"]
 
-    query = "SELECT * FROM subscribers"
+    # Используем список для безопасного построения запроса
+    query_parts = ["SELECT * FROM subscribers"]
+    where_clauses = []
 
+    # --- БЛОК ИЗМЕНЕНИЙ ---
+    if balance_filter == 'debtors':
+        where_clauses.append("balance < 0")
+    elif balance_filter == 'positive':
+        where_clauses.append("balance >= 0")
+
+    if where_clauses:
+        # Добавляем WHERE и объединяем условия (хотя здесь оно одно)
+        query_parts.append("WHERE " + " AND ".join(where_clauses))
+    # --- КОНЕЦ БЛОКА ИЗМЕНЕНИЙ ---
+
+    # Логика сортировки
     if sort_by in allowed_sort_columns:
         order_direction = "DESC" if order == 'desc' else "ASC"
-        query += f" ORDER BY {sort_by} {order_direction}"
+        query_parts.append(f"ORDER BY {sort_by} {order_direction}")
     else:
-        query += " ORDER BY subscriber_id ASC"
+        query_parts.append("ORDER BY subscriber_id ASC")
 
-    rows = await conn.fetch(query)
+    # Объединяем все части через пробел
+    final_query = " ".join(query_parts)
+
+    # В этой конкретной функции параметры не используются, но так безопаснее
+    rows = await conn.fetch(final_query)
     await conn.close()
     return rows
 

@@ -7,9 +7,9 @@ from fastapi.templating import Jinja2Templates
 
 from src.services import contract_service, pdf_service
 from src.auth.dependencies import require_tech, require_manager
+from src.templating import templates
 
 router = APIRouter(prefix="/contracts", tags=["Contracts"], dependencies=[Depends(require_tech)])
-templates = Jinja2Templates(directory="templates")
 
 @router.get("", response_class=HTMLResponse)
 async def list_contracts_page(
@@ -17,13 +17,17 @@ async def list_contracts_page(
     sort_by: Optional[str] = Query(None),
     order: Optional[str] = Query('asc'),
     status: Optional[str] = Query(None),
-    service_id: Optional[int] = Query(None)
+    service_id: Optional[str] = Query(None)
 ):
+    service_id_int: Optional[int] = None
+    if service_id and service_id.isdigit():
+        service_id_int = int(service_id)
+
     contracts = await contract_service.fetch_all_contracts(
         sort_by=sort_by,
         order=order,
         status_filter=status,
-        service_id_filter=service_id
+        service_id_filter=service_id_int
     )
     services_for_filter = await contract_service.fetch_all_services_for_selection()
 
@@ -35,7 +39,7 @@ async def list_contracts_page(
         "sort_by": sort_by,
         "order": order,
         "current_status": status,
-        "current_service_id": service_id
+        "current_service_id": service_id_int
     })
 
 @router.get("/new", response_class=HTMLResponse, dependencies=[Depends(require_manager)])

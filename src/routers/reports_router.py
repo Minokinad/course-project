@@ -2,17 +2,15 @@ from datetime import date, timedelta
 from fastapi import APIRouter, Request, Depends, Query
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
-from fastapi.templating import Jinja2Templates
 
 import pandas as pd
 from io import BytesIO
 
 from src.services import report_service
 from src.auth.dependencies import require_admin
+from src.templating import templates
 
 router = APIRouter(prefix="/reports", tags=["Reports"], dependencies=[Depends(require_admin)])
-templates = Jinja2Templates(directory="templates")
-
 @router.get("", response_class=HTMLResponse)
 async def reports_page(
     request: Request,

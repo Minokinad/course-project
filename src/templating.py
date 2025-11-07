@@ -11,4 +11,6 @@ def nl2br(value: str) -> str:
 
 templates = Jinja2Templates(directory="templates")
 
+templates.env.add_extension('jinja2.ext.do')
+
 templates.env.filters['nl2br'] = nl2br

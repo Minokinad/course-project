@@ -4,9 +4,9 @@ from fastapi.templating import Jinja2Templates
 
 from src.services import auth_service, subscriber_auth_service
 from src.db.connection import get_db_connection
+from src.templating import templates
 
 router = APIRouter(prefix="/auth", tags=["Unified Auth"])
-templates = Jinja2Templates(directory="templates")
 
 # --- ЕДИНАЯ СТРАНИЦА ВХОДА ---
 @router.get("/login", response_class=HTMLResponse)
