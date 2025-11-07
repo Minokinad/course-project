@@ -66,11 +66,15 @@ CREATE TABLE payments (
 
 CREATE TABLE notifications (
     notification_id SERIAL PRIMARY KEY,
-    subscriber_id   INTEGER NOT NULL REFERENCES subscribers(subscriber_id),
+    subscriber_id   INTEGER NOT NULL REFERENCES subscribers(subscriber_id) ON DELETE CASCADE,
     message         TEXT NOT NULL,
     type            VARCHAR(50) NOT NULL,
-    sent_date       TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+    related_url VARCHAR(255),
+    is_read BOOLEAN DEFAULT FALSE NOT NULL,
+    sent_date TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+CREATE INDEX idx_notifications_subscriber_id ON notifications(subscriber_id);
 
 CREATE TABLE system_logs (
     log_id SERIAL PRIMARY KEY,

@@ -1,6 +1,7 @@
 from typing import Optional
 from src.db.connection import get_db_connection
 from src.services.log_service import log_action
+from src.services.notification_service import notification_service
 
 
 async def create_ticket(subscriber_id: int, title: str, description: str):
@@ -95,11 +96,23 @@ async def update_ticket(ticket_id: int, status: str, assigned_to_id: Optional[in
     Обновление статуса и/или назначенного сотрудника для заявки.
     """
     conn = await get_db_connection()
+    old_ticket = await conn.fetchrow("SELECT status, subscriber_id FROM tickets WHERE ticket_id = $1", ticket_id)
+
     await conn.execute(
         "UPDATE tickets SET status = $1, assigned_to_id = $2 WHERE ticket_id = $3",
         status, assigned_to_id, ticket_id
     )
     await conn.close()
+
+    if old_ticket and old_ticket['status'] != status:
+        message = f"Статус вашей заявки #{ticket_id} изменен на «{status}»."
+        await notification_service.create_notification(
+            subscriber_id=old_ticket['subscriber_id'],
+            message=message,
+            type="Обновление заявки",
+            related_url=f"/subscriber/tickets/{ticket_id}"
+        )
+
     await log_action(
         "INFO",
         f"Статус заявки ID: {ticket_id} изменен на '{status}'. Назначен сотрудник ID: {assigned_to_id or 'не назначен'}.",
@@ -149,6 +162,17 @@ async def add_message_to_ticket(ticket_id: int, message_text: str, user_login: s
             "UPDATE tickets SET updated_at = NOW() WHERE ticket_id = $1",
             ticket_id
         )
+        if employee_id:
+            ticket_owner_id = await conn.fetchval("SELECT subscriber_id FROM tickets WHERE ticket_id = $1", ticket_id)
+            if ticket_owner_id:
+                employee_name = await conn.fetchval("SELECT name FROM employees WHERE employee_id = $1", employee_id)
+                message = f"Сотрудник {employee_name.split()[0]} ответил в вашей заявке #{ticket_id}."
+                await notification_service.create_notification(
+                    subscriber_id=ticket_owner_id,
+                    message=message,
+                    type="Новый ответ в заявке",
+                    related_url=f"/subscriber/tickets/{ticket_id}"
+                )
     await conn.close()
     author_type = "Абонент" if subscriber_id else "Сотрудник"
     await log_action(

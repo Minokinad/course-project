@@ -11,24 +11,17 @@
         {% if notifications %}
             <div class="list-group">
             {% for notification in notifications %}
-                <div class="list-group-item list-group-item-action flex-column align-items-start">
+                <a href="{{ notification.related_url }}" class="list-group-item list-group-item-action flex-column align-items-start {% if not notification.is_read %}list-group-item-light fw-bold{% endif %}">
                     <div class="d-flex w-100 justify-content-between">
-                        <h5 class="mb-1">
-                            {% if notification.type == 'Предупреждение о задолженности' %}
-                                <i class="bi bi-exclamation-triangle-fill text-danger"></i>
-                            {% else %}
-                                <i class="bi bi-info-circle-fill text-primary"></i>
-                            {% endif %}
-                            {{ notification.type }}
-                        </h5>
+                        <p class="mb-1">{{ notification.message }}</p>
                         <small>{{ notification.sent_date.strftime('%d.%m.%Y %H:%M') }}</small>
                     </div>
-                    <p class="mb-1">{{ notification.message }}</p>
-                </div>
+                    <small class="text-muted">{{ notification.type }}</small>
+                </a>
             {% endfor %}
             </div>
         {% else %}
-        <div class="alert alert-info">У вас нет новых уведомлений.</div>
+        <div class="alert alert-info">У вас пока нет уведомлений.</div>
         {% endif %}
     </div>
 </div>
