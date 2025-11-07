@@ -4,7 +4,6 @@ from typing import Optional
 
 from fastapi import APIRouter, Request, Form, Depends, UploadFile, File, HTTPException, Query
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
-from fastapi.templating import Jinja2Templates
 
 from src.services import subscriber_service, contract_service
 from src.auth.dependencies import require_manager, require_admin, require_tech
@@ -98,12 +97,19 @@ async def delete_subscriber_htmx(request: Request, sub_id: int):
     result = await subscriber_service.delete_subscriber(sub_id, user_login=request.state.user_login)
 
     if result.get("error"):
-        error_html = f"""
-        <tr class="table-danger" hx-swap-oob="true" id="error-row-{sub_id}">
-            <td colspan="6">{result['error']} <button class="btn btn-sm btn-link" onclick="this.closest('tr').remove()">OK</button></td>
-        </tr>
-        """
-        return HTMLResponse(content=f'<tr id="subscriber-row-{sub_id}">{error_html}</tr>', status_code=409)
+        column_count = 7
+
+        error_html_simple = f"""
+                <tr id="subscriber-row-{sub_id}" class="table-danger">
+                    <td colspan="{column_count}">
+                        {result['error']}
+                        <button class="btn btn-sm btn-link float-end" hx-get="/subscribers" hx-target="body" hx-push-url="true">
+                            OK
+                        </button>
+                    </td>
+                </tr>
+                """
+        return HTMLResponse(content=error_html_simple, status_code=409)
 
     return HTMLResponse(content="", status_code=200)
 

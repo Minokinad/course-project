@@ -50,6 +50,7 @@ async def new_equipment_form(request: Request):
 async def create_equipment_action(
     type: str = Form(...),
     serial_number: str = Form(...),
+    mac_address: str = Form(...),
     status: str = Form(...),
     contract_id: str = Form("")
 ):
@@ -58,7 +59,7 @@ async def create_equipment_action(
     """
     # Преобразуем пустую строку в None для contract_id
     c_id = int(contract_id) if contract_id else None
-    await equipment_service.create_equipment(type, serial_number, status, c_id)
+    await equipment_service.create_equipment(type, serial_number, mac_address, status, c_id)
     return RedirectResponse(url="/equipment", status_code=303)
 
 
@@ -87,6 +88,7 @@ async def update_equipment_action(
     eq_id: int,
     type: str = Form(...),
     serial_number: str = Form(...),
+    mac_address: str = Form(...),
     status: str = Form(...),
     contract_id: str = Form("")
 ):
@@ -94,7 +96,7 @@ async def update_equipment_action(
     Обрабатывает обновление данных оборудования, включая привязку к договору.
     """
     c_id = int(contract_id) if contract_id else None
-    await equipment_service.update_equipment(eq_id, type, serial_number, status, c_id)
+    await equipment_service.update_equipment(eq_id, type, serial_number, mac_address, status, c_id)
     return RedirectResponse(url="/equipment", status_code=303)
 
 

@@ -1,5 +1,18 @@
 {% for sub in subscribers %}
 <tr id="subscriber-row-{{ sub.subscriber_id }}">
+    <td>
+        {% if sub.avatar_url %}
+            <img src="/uploads/avatars/{{ sub.avatar_url }}"
+                 alt="Аватар"
+                 class="rounded-circle"
+                 width="40" height="40"
+                 style="object-fit: cover;">
+        {% else %}
+            <div class="text-muted">
+                <i class="bi bi-person-circle" style="font-size: 24px;"></i>
+            </div>
+        {% endif %}
+    </td>
     <td>{{ sub.subscriber_id }}</td>
     <td>{{ sub.full_name }}</td>
     <td>{{ sub.address }}</td>
@@ -20,7 +33,7 @@
         <button class="btn btn-sm btn-outline-danger"
                 title="Удалить"
                 hx-delete="/subscribers/{{ sub.subscriber_id }}"
-                hx-target="#subscriber-row-{{ sub.subscriber_id }}"
+                hx-target="closest tr"
                 hx-swap="outerHTML"
                 hx-confirm="Вы уверены, что хотите удалить абонента {{ sub.full_name }}?">
             <i class="bi bi-trash"></i>

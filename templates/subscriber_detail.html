@@ -9,27 +9,39 @@
 </div>
 
 <div class="row">
-    <!-- Блок с информацией -->
-    <div class="col-md-7">
-        <div class="card">
+    <div class="col-md-3 text-center">
+        {% if subscriber.avatar_url %}
+            <img src="/uploads/avatars/{{ subscriber.avatar_url }}"
+                 alt="Фото абонента"
+                 class="img-fluid rounded-circle mb-3"
+                 style="width: 180px; height: 180px; object-fit: cover;">
+        {% else %}
+            <div class="text-muted">
+                <i class="bi bi-person-circle" style="font-size: 180px;"></i>
+            </div>
+        {% endif %}
+    </div>
+    <div class="col-md-5">
+        <div class="card h-100">
             <div class="card-header">
                 {{ subscriber.full_name }} (ID: {{ subscriber.subscriber_id }})
             </div>
             <ul class="list-group list-group-flush">
                 <li class="list-group-item"><strong>Адрес:</strong> {{ subscriber.address }}</li>
                 <li class="list-group-item"><strong>Телефон:</strong> {{ subscriber.phone_number }}</li>
+                <li class="list-group-item"><strong>Email:</strong> {{ subscriber.email or 'Не указан' }}</li>
             </ul>
         </div>
     </div>
-    <!-- Блок баланса -->
-    <div class="col-md-5">
-        <div class="card">
+    <!-- Блок баланса (смещаем его) -->
+    <div class="col-md-4">
+        <div class="card h-100">
             <div class="card-header">
                 Баланс
             </div>
-            <div class="card-body">
+            <div class="card-body d-flex flex-column justify-content-center align-items-center">
                 <h2 class="card-title text-center mb-0">
-                    <span class="badge {% if subscriber.balance >= 0 %}bg-success{% else %}bg-danger{% endif %} fs-4">
+                    <span class="badge {% if subscriber.balance >= 0 %}bg-success{% else %}bg-danger{% endif %} fs-2">
                         {{ "%.2f"|format(subscriber.balance) }} BYN
                     </span>
                 </h2>

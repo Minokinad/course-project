@@ -18,13 +18,14 @@ async def fetch_all_equipment(
         "equipment_id": "e.equipment_id",
         "type": "e.type",
         "serial_number": "e.serial_number",
+        "mac_address": "e.mac_address",
         "status": "e.status",
         "subscriber_name": "subscriber_name"
     }
 
     query_parts = ["""
         SELECT
-            e.equipment_id, e.type, e.serial_number, e.status, e.contract_id,
+            e.equipment_id, e.type, e.serial_number, e.status, e.contract_id,  e.mac_address,
             s.subscriber_id, s.full_name as subscriber_name
         FROM equipment e
         LEFT JOIN contracts c ON e.contract_id = c.contract_id
@@ -67,33 +68,33 @@ async def fetch_equipment_by_id(equipment_id: int):
     return row
 
 
-async def create_equipment(type: str, serial_number: str, status: str, contract_id: Optional[int]):
+async def create_equipment(type: str, serial_number: str, mac_address: str, status: str, contract_id: Optional[int]):
     """
     Добавляет новое оборудование в базу данных.
     """
     conn = await get_db_connection()
     await conn.execute(
         """
-        INSERT INTO equipment (type, serial_number, status, contract_id)
-        VALUES ($1, $2, $3, $4)
+        INSERT INTO equipment (type, serial_number, mac_address, status, contract_id)
+        VALUES ($1, $2, $3, $4, $5)
         """,
-        type, serial_number, status, contract_id
+        type, serial_number, mac_address, status, contract_id
     )
     await conn.close()
 
 
-async def update_equipment(equipment_id: int, type: str, serial_number: str, status: str, contract_id: Optional[int]):
+async def update_equipment(equipment_id: int, type: str, serial_number: str, mac_address: str, status: str, contract_id: Optional[int]):
     """
-    Обновляет информацию об оборудовании, включая его привязку к договору.
+    Обновляет информацию об оборудовании.
     """
     conn = await get_db_connection()
     await conn.execute(
         """
         UPDATE equipment
-        SET type = $1, serial_number = $2, status = $3, contract_id = $4
-        WHERE equipment_id = $5
+        SET type = $1, serial_number = $2, mac_address = $3, status = $4, contract_id = $5
+        WHERE equipment_id = $6
         """,
-        type, serial_number, status, contract_id, equipment_id
+        type, serial_number, mac_address, status, contract_id, equipment_id
     )
     await conn.close()
 

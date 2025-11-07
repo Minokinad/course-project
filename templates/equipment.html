@@ -70,6 +70,7 @@
         {{ sort_th('equipment_id', 'ID') }}
         {{ sort_th('type', 'Тип') }}
         {{ sort_th('serial_number', 'Серийный номер') }}
+        {{ sort_th('mac_address', 'MAC-адрес') }}
         {{ sort_th('status', 'Статус') }}
         {{ sort_th('subscriber_name', 'Привязан к абоненту') }}
         <th>Действия</th>
@@ -81,6 +82,7 @@
             <td>{{ item.equipment_id }}</td>
             <td>{{ item.type }}</td>
             <td>{{ item.serial_number }}</td>
+            <td>{{ item.mac_address or '' }}</td>
             <td>{{ item.status }}</td>
             <td>
                 {% if item.subscriber_id %}
@@ -105,7 +107,7 @@
         </tr>
     {% else %}
         <tr>
-            <td colspan="6" class="text-center">В системе нет зарегистрированного оборудования.</td>
+            <td colspan="7" class="text-center">В системе нет зарегистрированного оборудования.</td>
         </tr>
     {% endfor %}
     </tbody>

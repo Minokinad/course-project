@@ -3,6 +3,8 @@ from fastapi_mail import FastMail, MessageSchema, ConnectionConfig
 from src.config import settings
 from src.db.connection import get_db_connection
 from src.services.auth_service import verify_password, hash_password
+from src.services.file_service import save_avatar
+from fastapi import UploadFile
 
 conf = ConnectionConfig(
     MAIL_USERNAME=settings.MAIL_USERNAME,
@@ -167,3 +169,21 @@ async def create_new_subscriber(full_name: str, address: str, phone: str, passwo
         return dict(new_subscriber)
 
     return None
+
+
+async def update_subscriber_avatar(subscriber_id: int, file: UploadFile):
+    """
+    Обновляет аватар абонента.
+    """
+    # 1. Сохраняем новый файл и получаем его имя
+    avatar_filename = await save_avatar(file, subscriber_id)
+
+    # 2. Обновляем запись в базе данных
+    conn = await get_db_connection()
+    await conn.execute(
+        "UPDATE subscribers SET avatar_url = $1 WHERE subscriber_id = $2",
+        avatar_filename, subscriber_id
+    )
+    await conn.close()
+
+    return {"success": True, "avatar_url": avatar_filename}

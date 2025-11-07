@@ -49,6 +49,7 @@ async def add_user_to_context(request: Request, call_next):
 
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 app.include_router(auth_router.router)
 app.include_router(cabinet_router.router)

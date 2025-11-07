@@ -27,7 +27,8 @@ CREATE TABLE subscribers (
     balance       NUMERIC(10, 2) NOT NULL DEFAULT 0.00,
     email VARCHAR(255) UNIQUE,
     is_confirmed BOOLEAN DEFAULT FALSE,
-    confirmation_token VARCHAR(255) UNIQUE
+    confirmation_token VARCHAR(255) UNIQUE,
+    avatar_url VARCHAR(255)
 );
 
 CREATE TABLE services (
@@ -51,6 +52,7 @@ CREATE TABLE equipment (
     contract_id   INTEGER REFERENCES contracts(contract_id),
     type          VARCHAR(100) NOT NULL,
     serial_number VARCHAR(100) NOT NULL UNIQUE,
+    mac_address VARCHAR(17) UNIQUE,
     status        VARCHAR(50) NOT NULL
 );
 

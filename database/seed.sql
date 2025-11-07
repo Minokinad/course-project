@@ -16,18 +16,17 @@ INSERT INTO services (name, description, price, status) VALUES
 
 
 
-INSERT INTO subscribers (full_name, address, phone_number, password_hash, balance) VALUES
-('Иванов Иван Иванович', 'г. Минск, ул. Центральная, д. 1, кв. 5', '+375291112233', '$2b$12$3WGj4v0I1X.SiiSl3juwBuSa4DFLzb07xbTO6FmyTtUX6EoDdBoGO',25.50),
-('Петров Петр Петрович', 'г. Минск, пр. Независимости, д. 10, кв. 12', '+375292223344', '$2b$12$HaDykufYhon.KgKf/qBzQe7PY784kUXobUeLEBgmaJAIzTsZYp3/O',-10.20),
-('Сидорова Мария Васильевна', 'г. Минск, ул. Якуба Коласа, д. 25, кв. 8', '+375293334455', '$2b$12$HR53Pai4/Pj2epbRYSYY7.nzjz7NQ4P2ktSV08n4jdHioetF5VX3q', 100.00),
-('Козлов Дмитрий Сергеевич', 'г. Гомель, ул. Советская, д. 50, кв. 3', '+375294445566', '$2b$12$kMmJwkervgdo/GPyBiDs2uIXs1.1JoC4dBCqbftw4.6dERe7yVvAe',0.00),
-('Новикова Анна Геннадьевна', 'г. Брест, ул. Машерова, д. 5, кв. 1', '+375295556677', '$2b$12$IVa0RTyZCmBXCZvx5Zmibe6BkKXP5aPPFoYoZTDDnqk25fTRXuxwy',5.75),
-('Васильев Алексей Викторович', 'г. Минск, ул. Сурганова, д. 45, кв. 110', '+375296667788', '$2b$12$uaZwQeT777ccIR8kH870aemmDjKt48qMTZoTg4OYkc96B/lpG5tXW', -25.50),
-('Зайцева Елена Михайловна', 'г. Минск, ул. Богдановича, д. 78, кв. 42', '+375297778899', '$2b$12$/Fp9lYOwHBdbf0VbaszFVe2P7dHSZrpzTvfhRI.HJo70RRQ9jSUle', 30.00),
-('Павлов Артем Романович', 'г. Гродно, ул. Ожешко, д. 15, кв. 19', '+375298889900', '$2b$12$M0eXxm1pWCZj5vHQfRakJ.D12C/6JI.eaxlj2YiWfimLgEUECWCfW',50.10),
-('Романова Светлана Денисовна', 'г. Витебск, пр. Московский, д. 33, кв. 22', '+375299990011', '$2b$12$avl1Y5.wtQVFKDNwFMWGm.CRKPzrJPQnIAbpmouSyQjoYwg535vge', 12.00),
-('Волков Игорь Станиславович', 'г. Минск, ул. Казинца, д. 120, кв. 301', '+375291122334', '$2b$12$D91w2DFOYvkbjX.aOygCRuB2tYDfpPaWoeCYAGEfYUryXU0iezrUW', 0.00);
-
+INSERT INTO subscribers (full_name, address, phone_number, password_hash, balance, email, is_confirmed, avatar_url) VALUES ('Иванов Иван Иванович', 'г. Минск, ул. Центральная, д. 1, кв. 5', '+375291112233', '$2b$12$3WGj4v0I1X.SiiSl3juwBuSa4DFLzb07xbTO6FmyTtUX6EoDdBoGO',25.50, 'ivan@ivanov.com', True, 'male1.png');
+INSERT INTO subscribers (full_name, address, phone_number, password_hash, balance, avatar_url) VALUES
+('Петров Петр Петрович', 'г. Минск, пр. Независимости, д. 10, кв. 12', '+375292223344', '$2b$12$HaDykufYhon.KgKf/qBzQe7PY784kUXobUeLEBgmaJAIzTsZYp3/O',-10.20, 'male2.png'),
+('Сидорова Мария Васильевна', 'г. Минск, ул. Якуба Коласа, д. 25, кв. 8', '+375293334455', '$2b$12$HR53Pai4/Pj2epbRYSYY7.nzjz7NQ4P2ktSV08n4jdHioetF5VX3q', 100.00, 'women1.png'),
+('Козлов Дмитрий Сергеевич', 'г. Гомель, ул. Советская, д. 50, кв. 3', '+375294445566', '$2b$12$kMmJwkervgdo/GPyBiDs2uIXs1.1JoC4dBCqbftw4.6dERe7yVvAe',0.00, 'male3.png'),
+('Новикова Анна Геннадьевна', 'г. Брест, ул. Машерова, д. 5, кв. 1', '+375295556677', '$2b$12$IVa0RTyZCmBXCZvx5Zmibe6BkKXP5aPPFoYoZTDDnqk25fTRXuxwy',5.75, 'women2.png'),
+('Васильев Алексей Викторович', 'г. Минск, ул. Сурганова, д. 45, кв. 110', '+375296667788', '$2b$12$uaZwQeT777ccIR8kH870aemmDjKt48qMTZoTg4OYkc96B/lpG5tXW', -25.50, 'male4.png'),
+('Зайцева Елена Михайловна', 'г. Минск, ул. Богдановича, д. 78, кв. 42', '+375297778899', '$2b$12$/Fp9lYOwHBdbf0VbaszFVe2P7dHSZrpzTvfhRI.HJo70RRQ9jSUle', 30.00, 'women3.png'),
+('Павлов Артем Романович', 'г. Гродно, ул. Ожешко, д. 15, кв. 19', '+375298889900', '$2b$12$M0eXxm1pWCZj5vHQfRakJ.D12C/6JI.eaxlj2YiWfimLgEUECWCfW',50.10, 'male5.png'),
+('Романова Светлана Денисовна', 'г. Витебск, пр. Московский, д. 33, кв. 22', '+375299990011', '$2b$12$avl1Y5.wtQVFKDNwFMWGm.CRKPzrJPQnIAbpmouSyQjoYwg535vge', 12.00, 'women4.png'),
+('Волков Игорь Станиславович', 'г. Минск, ул. Казинца, д. 120, кв. 301', '+375291122334', '$2b$12$D91w2DFOYvkbjX.aOygCRuB2tYDfpPaWoeCYAGEfYUryXU0iezrUW', 0.00, 'male6.png');
 
 INSERT INTO contracts (subscriber_id, service_id, start_date, status) VALUES
 (1, 2, '2022-01-15', 'Активен'),

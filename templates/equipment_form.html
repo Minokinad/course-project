@@ -19,6 +19,15 @@
                 <label for="serial_number" class="form-label">Серийный номер</label>
                 <input type="text" class="form-control" id="serial_number" name="serial_number" value="{{ equipment.serial_number if equipment else '' }}" required>
             </div>
+            <div class="mb-3">
+                <label for="mac_address" class="form-label">MAC-адрес</label>
+                <input type="text" class="form-control" id="mac_address" name="mac_address"
+                       value="{{ equipment.mac_address if equipment and equipment.mac_address else '' }}"
+                       placeholder="XX:XX:XX:XX:XX:XX"
+                       pattern="([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})"
+                       title="Введите MAC-адрес в формате XX:XX:XX:XX:XX:XX"
+                       required>
+            </div>
              <div class="mb-3">
                 <label for="status" class="form-label">Статус</label>
                  <select class="form-select" id="status" name="status" required>

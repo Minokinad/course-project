@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Request, Depends, Form
+from fastapi import APIRouter, Request, Depends, Form, File, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse
 
 from src.services import subscriber_auth_service, subscriber_service, contract_service, ticket_service
@@ -156,3 +156,19 @@ async def add_message_subscriber_action(
             user_login=f"subscriber_{current_subscriber['subscriber_id']}"
         )
     return RedirectResponse(url=f"/subscriber/tickets/{ticket_id}", status_code=303)
+
+
+@router.post("/edit/avatar")
+async def subscriber_upload_avatar(
+        request: Request,
+        current_subscriber: dict = Depends(require_subscriber_login),
+        avatar: UploadFile = File(...)
+):
+    # Простая проверка на тип файла
+    if not avatar.content_type.startswith("image/"):
+        # В реальном приложении лучше возвращать ошибку в шаблон
+        return RedirectResponse(url="/subscriber/edit", status_code=303)
+
+    await subscriber_auth_service.update_subscriber_avatar(current_subscriber['subscriber_id'], avatar)
+
+    return RedirectResponse(url="/subscriber/edit", status_code=303)
