@@ -6,6 +6,7 @@ DROP TABLE IF EXISTS services CASCADE;
 DROP TABLE IF EXISTS subscribers CASCADE;
 DROP TABLE IF EXISTS employees CASCADE;
 DROP TABLE IF EXISTS system_logs CASCADE;
+DROP TABLE IF EXISTS tickets CASCADE;
 
 CREATE TABLE employees (
     employee_id   SERIAL PRIMARY KEY,
@@ -72,3 +73,29 @@ CREATE TABLE system_logs (
     message TEXT NOT NULL,
     user_login VARCHAR(255)
 );
+
+CREATE TABLE tickets (
+    ticket_id SERIAL PRIMARY KEY,
+    subscriber_id INTEGER NOT NULL REFERENCES subscribers(subscriber_id) ON DELETE CASCADE,
+    assigned_to_id INTEGER REFERENCES employees(employee_id) ON DELETE SET NULL,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    status VARCHAR(50) NOT NULL DEFAULT 'Новая',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_tickets_status ON tickets(status);
+
+CREATE OR REPLACE FUNCTION trigger_set_timestamp()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER set_timestamp
+BEFORE UPDATE ON tickets
+FOR EACH ROW
+EXECUTE PROCEDURE trigger_set_timestamp();

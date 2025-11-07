@@ -6,7 +6,8 @@ from jose import JWTError, jwt
 from src.routers import (
     subscribers_router, auth_router, cabinet_router,
     service_router, equipment_router, contracts_router,
-    employees_router, reports_router, logs_router
+    employees_router, reports_router, logs_router,
+    tickets_router
 )
 from src.services.auth_service import get_employee_by_login
 from src.services.subscriber_service import fetch_subscriber_by_id
@@ -54,6 +55,7 @@ app.include_router(contracts_router.router)
 app.include_router(employees_router.router)
 app.include_router(reports_router.router)
 app.include_router(logs_router.router)
+app.include_router(tickets_router.router)
 
 
 @app.get("/")

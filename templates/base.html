@@ -34,6 +34,9 @@
                             <a class="nav-link {% if active_page == 'contracts' %}active{% endif %}" href="/contracts">Договоры</a>
                         </li>
                         <li class="nav-item">
+                            <a class="nav-link {% if active_page == 'tickets' %}active{% endif %}" href="/tickets">Заявки</a>
+                        </li>
+                        <li class="nav-item">
                             <a class="nav-link {% if active_page == 'services' %}active{% endif %}" href="/services">Услуги</a>
                         </li>
                          <li class="nav-item">
@@ -67,7 +70,6 @@
     </nav>
 
     <main class="container mt-4">
-        <!-- Единственный блок для контента. Вся разметка будет вставляться сюда. -->
         {% block content %}{% endblock %}
     </main>
 

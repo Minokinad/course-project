@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3">Управление заявкой #{{ ticket.ticket_id }}</h1>
+    <a href="/tickets" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> К списку заявок
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-md-7">
+        <div class="card">
+            <div class="card-header">
+                Детали заявки
+            </div>
+            <div class="card-body">
+                <h5 class="card-title">{{ ticket.title }}</h5>
+                <p class="card-text">{{ ticket.description|nl2br }}</p>
+                <hr>
+                <p><strong>Абонент:</strong> <a href="/subscribers/{{ ticket.subscriber_id }}">{{ ticket.subscriber_name }}</a></p>
+                <p><strong>Дата создания:</strong> {{ ticket.created_at.strftime('%d.%m.%Y в %H:%M') }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-5">
+        <div class="card">
+            <div class="card-header">
+                Изменить статус
+            </div>
+            <div class="card-body">
+                <form action="/tickets/{{ ticket.ticket_id }}" method="post">
+                    <div class="mb-3">
+                        <label for="status" class="form-label">Текущий статус</label>
+                        <select name="status" id="status" class="form-select">
+                            {% set statuses = ['Новая', 'В работе', 'Закрыта'] %}
+                            {% for s in statuses %}
+                                <option value="{{ s }}" {% if ticket.status == s %}selected{% endif %}>{{ s }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="assigned_to_id" class="form-label">Назначить исполнителя</label>
+                        <select name="assigned_to_id" id="assigned_to_id" class="form-select">
+                            <option value="">Не назначен</option>
+                            {% for assignee in assignees %}
+                                <option value="{{ assignee.employee_id }}" {% if ticket.assigned_to_id == assignee.employee_id %}selected{% endif %}>
+                                    {{ assignee.name }} ({{ assignee.role }})
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-success">Сохранить изменения</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
