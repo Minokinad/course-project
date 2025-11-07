@@ -48,9 +48,9 @@ async def new_equipment_form(request: Request):
 
 @router.post("/new")
 async def create_equipment_action(
-    type: str = Form(...),
-    serial_number: str = Form(...),
-    mac_address: str = Form(...),
+    type: str = Form(..., max_length=50),
+    serial_number: str = Form(..., max_length=100),
+    mac_address: str = Form(..., pattern=r'^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$'),
     status: str = Form(...),
     contract_id: str = Form("")
 ):
@@ -86,9 +86,9 @@ async def edit_equipment_form(request: Request, eq_id: int):
 @router.post("/{eq_id}/edit")
 async def update_equipment_action(
     eq_id: int,
-    type: str = Form(...),
-    serial_number: str = Form(...),
-    mac_address: str = Form(...),
+    type: str = Form(..., max_length=50),
+    serial_number: str = Form(..., max_length=100),
+    mac_address: str = Form(..., pattern=r'^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$'),
     status: str = Form(...),
     contract_id: str = Form("")
 ):

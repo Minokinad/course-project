@@ -1,5 +1,6 @@
-from fastapi import APIRouter, Request, Depends, Form, File, UploadFile
+from fastapi import APIRouter, Request, Depends, Form, File, UploadFile, HTTPException, status
 from fastapi.responses import HTMLResponse, RedirectResponse
+from pathlib import Path
 
 from src.services import subscriber_auth_service, subscriber_service, contract_service, ticket_service
 from src.services.notification_service import notification_service
@@ -67,10 +68,10 @@ async def subscriber_edit_page(request: Request, current_subscriber: dict = Depe
 @router.post("/edit")
 async def subscriber_edit_form(
         request: Request,
-        current_subscriber: dict = Depends(add_common_subscriber_context),
-        full_name: str = Form(...),
-        address: str = Form(...),
-        phone_number: str = Form(...)
+        current_subscriber: dict = Depends(require_subscriber_login),
+        full_name: str = Form(..., max_length=100),
+        address: str = Form(..., max_length=255),
+        phone_number: str = Form(..., max_length=20, pattern=r'^\+?[0-9]+$')
 ):
     result = await subscriber_auth_service.update_subscriber_contact_info(
         current_subscriber['subscriber_id'], full_name, address, phone_number
@@ -87,11 +88,20 @@ async def subscriber_edit_form(
 
 @router.post("/top-up")
 async def subscriber_top_up(
+        request: Request,
         current_subscriber: dict = Depends(add_common_subscriber_context),
-        amount: float = Form(...)
+        amount: float = Form(..., ge=1, le=1000)
 ):
-    if amount <= 0:
-        return RedirectResponse(url="/subscriber/cabinet", status_code=303)
+    subscriber_info = await subscriber_service.fetch_subscriber_by_id(current_subscriber['subscriber_id'])
+    if subscriber_info['balance'] + amount > 10000.00:
+        contracts = await contract_service.fetch_contracts_by_subscriber_id(current_subscriber['subscriber_id'])
+        return templates.TemplateResponse("subscriber_cabinet.html", {
+            "request": request,
+            "subscriber": subscriber_info,
+            "contracts": contracts,
+            "active_page": "cabinet",
+            "top_up_error": f"После пополнения баланс превысит максимальный лимит в 10000.00 BYN."
+        }, status_code=400)
 
     await subscriber_auth_service.top_up_subscriber_balance(current_subscriber['subscriber_id'], amount)
     return RedirectResponse(url="/subscriber/cabinet", status_code=303)
@@ -175,12 +185,30 @@ async def add_message_subscriber_action(
 @router.post("/edit/avatar")
 async def subscriber_upload_avatar(
         request: Request,
-        current_subscriber: dict = Depends(add_common_subscriber_context),
+        current_subscriber: dict = Depends(require_subscriber_login),
         avatar: UploadFile = File(...)
 ):
-    if not avatar.content_type.startswith("image/"):
-        return RedirectResponse(url="/subscriber/edit", status_code=303)
+    # --- БЛОК ВАЛИДАЦИИ ФАЙЛА ---
+    ALLOWED_CONTENT_TYPES = ["image/jpeg", "image/png", "image/gif"]
+    MAX_FILE_SIZE = 5 * 1024 * 1024  # 5 MB
+
+    if avatar.content_type not in ALLOWED_CONTENT_TYPES:
+        error_msg = "Неверный формат файла. Разрешены только JPG, PNG и GIF."
+    elif avatar.size > MAX_FILE_SIZE:
+        error_msg = "Файл слишком большой. Максимальный размер: 5 МБ."
+    else:
+        error_msg = None
+
+    if error_msg:
+        # Получаем актуальные данные пользователя для рендеринга страницы
+        subscriber_info = await subscriber_service.fetch_subscriber_by_id(current_subscriber['subscriber_id'])
+        return templates.TemplateResponse("subscriber_edit_form.html", {
+            "request": request,
+            "subscriber": subscriber_info,
+            "active_page": "edit",
+            "error": error_msg  # Передаем ошибку в шаблон
+        }, status_code=status.HTTP_400_BAD_REQUEST)
+    # --- КОНЕЦ БЛОКА ВАЛИДАЦИИ ---
 
     await subscriber_auth_service.update_subscriber_avatar(current_subscriber['subscriber_id'], avatar)
-
     return RedirectResponse(url="/subscriber/edit", status_code=303)

@@ -50,7 +50,15 @@
             </div>
             <div class="mb-3">
                 <label for="phone_number" class="form-label">Номер телефона</label>
-                <input type="text" class="form-control" id="phone_number" name="phone_number" value="{{ subscriber.phone_number }}" required>
+                <input
+                    type="tel"
+                    class="form-control"
+                    id="phone_number"
+                    name="phone_number"
+                    value="{{ subscriber.phone_number }}"
+                    required
+                    pattern="\+?[0-9]+"
+                    title="Номер телефона может содержать только цифры и знак '+' в начале.">
             </div>
 
             <button type="submit" class="btn btn-success">Сохранить изменения</button>

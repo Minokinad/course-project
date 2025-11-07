@@ -1,10 +1,11 @@
-from fastapi import APIRouter, Request, Depends, Form
+from fastapi import APIRouter, Request, Depends, Form, HTTPException, status
 from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.templating import Jinja2Templates
 
 from src.services import auth_service, subscriber_auth_service
 from src.db.connection import get_db_connection
 from src.templating import templates
+
+import re
 
 router = APIRouter(prefix="/auth", tags=["Unified Auth"])
 
@@ -56,26 +57,20 @@ async def register_page(request: Request):
 
 @router.post("/register")
 async def register_form(
-    request: Request,
-    full_name: str = Form(...),
-    address: str = Form(...),
-    phone_number: str = Form(...),
-    email: str = Form(...),
-    password: str = Form(...)
+        request: Request,
+        full_name: str = Form(..., max_length=100),
+        address: str = Form(..., max_length=255),
+        phone_number: str = Form(..., max_length=20, pattern=r'^\+?[0-9]+$'),
+        email: str = Form(..., max_length=100),
+        password: str = Form(..., min_length=6)
 ):
+    if not re.fullmatch(r"\+?[0-9\s\-\(\)]+", phone_number):
+        return templates.TemplateResponse("register.html", {
+            "request": request, "error": "Неверный формат номера телефона.", "form": await request.form()
+        }, status_code=status.HTTP_422_UNPROCESSABLE_ENTITY)
+
     result = await subscriber_auth_service.create_new_subscriber(
         full_name, address, phone_number, password, email
-    )
-
-    if result and result.get("error"):
-        return templates.TemplateResponse(
-            "register.html",
-            {"request": request, "error": result.get("error")}
-        )
-
-    return templates.TemplateResponse(
-        "register_success.html",
-        {"request": request, "email": email}
     )
 
 

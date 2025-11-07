@@ -15,10 +15,10 @@ router = APIRouter(prefix="/subscribers", tags=["Subscribers"], dependencies=[De
 
 @router.get("", response_class=HTMLResponse)
 async def list_subscribers_page(
-    request: Request,
-    sort_by: Optional[str] = Query(None),
-    order: Optional[str] = Query('asc'),
-    balance_filter: Optional[str] = Query(None)
+        request: Request,
+        sort_by: Optional[str] = Query(None),
+        order: Optional[str] = Query('asc'),
+        balance_filter: Optional[str] = Query(None)
 ):
     subscribers = await subscriber_service.fetch_all_subscribers(
         sort_by=sort_by, order=order, balance_filter=balance_filter
@@ -44,9 +44,11 @@ async def new_subscriber_form(request: Request):
 
 @router.post("/new", dependencies=[Depends(require_manager)])
 async def create_subscriber_form(
-    request: Request,
-    full_name: str = Form(...), address: str = Form(""),
-    phone_number: str = Form(""), balance: float = Form(0.0)
+        request: Request,
+        full_name: str = Form(..., max_length=100),
+        address: str = Form(..., max_length=255),
+        phone_number: str = Form(..., max_length=20, pattern=r'^\+?[0-9]+$'),
+        balance: float = Form(0.0, ge=-100.00, le=10000.00)
 ):
     await subscriber_service.create_subscriber(
         full_name, address, phone_number, balance, user_login=request.state.user_login
@@ -83,9 +85,12 @@ async def edit_subscriber_form(request: Request, sub_id: int):
 
 @router.post("/{sub_id}/edit", dependencies=[Depends(require_manager)])
 async def update_subscriber_form(
-    request: Request,
-    sub_id: int, full_name: str = Form(...), address: str = Form(""),
-    phone_number: str = Form(""), balance: float = Form(0.0)
+        request: Request,
+        sub_id: int,
+        full_name: str = Form(..., max_length=100),
+        address: str = Form(..., max_length=255),
+        phone_number: str = Form(..., max_length=20, pattern=r'^\+?[0-9]+$'),
+        balance: float = Form(0.0, ge=-100.00, le=10000.00)
 ):
     await subscriber_service.update_subscriber(
         sub_id, full_name, address, phone_number, balance, user_login=request.state.user_login

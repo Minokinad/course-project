@@ -33,11 +33,24 @@
                                 {{ "%.2f"|format(subscriber.balance) }} BYN
                             </span>
                         </h2>
+                        {% if top_up_error %}
+                            <div class="alert alert-danger p-2 small">{{ top_up_error }}</div>
+                        {% endif %}
+
                         <form action="/subscriber/top-up" method="post">
                             <div class="input-group">
-                                <input type="number" step="0.01" min="0.01" class="form-control" name="amount" placeholder="Сумма" required>
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    min="1"
+                                    max="1000"
+                                    class="form-control"
+                                    name="amount"
+                                    placeholder="Сумма"
+                                    required>
                                 <button class="btn btn-primary" type="submit">Пополнить</button>
                             </div>
+                            <div class="form-text">Сумма пополнения от 1.00 до 1000.00 BYN.</div>
                         </form>
                     </div>
                 </div>

@@ -121,3 +121,27 @@ CREATE TABLE ticket_messages (
 );
 
 CREATE INDEX idx_ticket_messages_ticket_id ON ticket_messages(ticket_id);
+
+-- Ограничение на минимальный баланс
+ALTER TABLE subscribers ADD CONSTRAINT balance_check CHECK (balance >= -1000.00);
+
+-- Ограничение на формат email (простая проверка на наличие '@' и точки)
+ALTER TABLE subscribers ADD CONSTRAINT email_format_check CHECK (email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$');
+
+-- Убедимся, что телефон не пустой (если он обязателен)
+ALTER TABLE subscribers ALTER COLUMN phone_number SET NOT NULL;
+
+ALTER TABLE subscribers ADD CONSTRAINT phone_number_format_check
+CHECK (phone_number ~* '^\+?[0-9]+$');
+
+-- Ограничение на роли сотрудников
+ALTER TABLE employees ADD CONSTRAINT role_check CHECK (role IN ('Администратор', 'Менеджер', 'Технический специалист'));
+
+-- Ограничение на статусы договоров
+ALTER TABLE contracts ADD CONSTRAINT contract_status_check CHECK (status IN ('Активен', 'Приостановлен', 'Расторгнут', 'Ожидает активации'));
+
+-- Ограничение на цену услуги (не может быть отрицательной)
+ALTER TABLE services ADD CONSTRAINT price_check CHECK (price >= 0);
+
+-- Ограничение на формат MAC-адреса
+ALTER TABLE equipment ADD CONSTRAINT mac_address_format_check CHECK (mac_address ~* '^([0-9A-F]{2}[:-]){5}([0-9A-F]{2})$');

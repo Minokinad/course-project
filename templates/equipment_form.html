@@ -13,11 +13,11 @@
         <div class="col-md-8">
              <div class="mb-3">
                 <label for="type" class="form-label">Тип оборудования</label>
-                <input type="text" class="form-control" id="type" name="type" value="{{ equipment.type if equipment else '' }}" required>
+                <input type="text" class="form-control" id="type" name="type" value="{{ equipment.type if equipment else '' }}" required maxlength="50">
             </div>
              <div class="mb-3">
                 <label for="serial_number" class="form-label">Серийный номер</label>
-                <input type="text" class="form-control" id="serial_number" name="serial_number" value="{{ equipment.serial_number if equipment else '' }}" required>
+                <input type="text" class="form-control" id="serial_number" name="serial_number" value="{{ equipment.serial_number if equipment else '' }}" required maxlength="100">
             </div>
             <div class="mb-3">
                 <label for="mac_address" class="form-label">MAC-адрес</label>
@@ -26,7 +26,7 @@
                        placeholder="XX:XX:XX:XX:XX:XX"
                        pattern="([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})"
                        title="Введите MAC-адрес в формате XX:XX:XX:XX:XX:XX"
-                       required>
+                       required >
             </div>
              <div class="mb-3">
                 <label for="status" class="form-label">Статус</label>
