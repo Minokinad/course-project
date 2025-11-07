@@ -1,5 +1,5 @@
 from datetime import date
-from typing import Optional
+from typing import Optional, Dict, Any
 from src.db.connection import get_db_connection
 from src.services.log_service import log_action
 
@@ -22,13 +22,17 @@ async def fetch_contracts_by_subscriber_id(subscriber_id: int):
     return contracts
 
 
-async def fetch_all_contracts(sort_by: Optional[str] = None, order: Optional[str] = 'asc'):
+async def fetch_all_contracts(
+    sort_by: Optional[str] = None,
+    order: Optional[str] = 'asc',
+    status_filter: Optional[str] = None,
+    service_id_filter: Optional[int] = None
+):
     """
     Получает все договоры в системе с информацией об абонентах и услугах.
     """
     conn = await get_db_connection()
 
-    # Белый список для сортировки (используем псевдонимы)
     allowed_sort_columns = {
         "contract_id": "c.contract_id",
         "subscriber_name": "subscriber_name",
@@ -37,24 +41,40 @@ async def fetch_all_contracts(sort_by: Optional[str] = None, order: Optional[str
         "status": "c.status"
     }
 
-    query = """
-    SELECT
-        c.contract_id, c.start_date, c.status,
-        s.name as service_name,
-        sub.full_name as subscriber_name, sub.subscriber_id
-    FROM contracts c
-    JOIN services s ON c.service_id = s.service_id
-    JOIN subscribers sub ON c.subscriber_id = sub.subscriber_id
-    """
+    query_parts = ["""
+        SELECT
+            c.contract_id, c.start_date, c.status,
+            s.name as service_name,
+            sub.full_name as subscriber_name, sub.subscriber_id
+        FROM contracts c
+        JOIN services s ON c.service_id = s.service_id
+        JOIN subscribers sub ON c.subscriber_id = sub.subscriber_id
+        """]
+    params = []
+    where_clauses = []
 
-    order_by_clause = "ORDER BY c.start_date DESC"  # Сортировка по умолчанию
+    if status_filter:
+        params.append(status_filter)
+        where_clauses.append(f"c.status = ${len(params)}")
+
+    if service_id_filter:
+        params.append(service_id_filter)
+        where_clauses.append(f"c.service_id = ${len(params)}")
+
+    if where_clauses:
+        query_parts.append("WHERE " + " AND ".join(where_clauses))
+    # --- КОНЕЦ НОВОГО БЛОКА ---
+
+    order_by_clause = "ORDER BY c.start_date DESC"
     if sort_by in allowed_sort_columns:
         order_direction = "DESC" if order == 'desc' else "ASC"
         order_by_clause = f"ORDER BY {allowed_sort_columns[sort_by]} {order_direction}"
 
-    query += f" {order_by_clause}"
+    query_parts.append(order_by_clause)
 
-    contracts = await conn.fetch(query)
+    final_query = " ".join(query_parts)
+
+    contracts = await conn.fetch(final_query, *params)
     await conn.close()
     return contracts
 
@@ -119,3 +139,27 @@ async def fetch_all_services_for_selection():
     rows = await conn.fetch("SELECT service_id, name, price FROM services WHERE status = 'Активна' ORDER BY name")
     await conn.close()
     return rows
+
+
+async def fetch_contract_details_for_pdf(contract_id: int) -> Optional[Dict[str, Any]]:
+    """
+    Получает все необходимые данные для генерации PDF-договора.
+    """
+    conn = await get_db_connection()
+    query = """
+    SELECT
+        c.contract_id, c.start_date, c.status,
+        s.name as service_name, s.description as service_description, s.price,
+        sub.full_name as subscriber_name, sub.address as subscriber_address
+    FROM contracts c
+    JOIN services s ON c.service_id = s.service_id
+    JOIN subscribers sub ON c.subscriber_id = sub.subscriber_id
+    WHERE c.contract_id = $1
+    """
+    contract_data = await conn.fetchrow(query, contract_id)
+    await conn.close()
+
+    if not contract_data:
+        return None
+
+    return dict(contract_data)

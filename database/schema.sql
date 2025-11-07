@@ -7,6 +7,7 @@ DROP TABLE IF EXISTS subscribers CASCADE;
 DROP TABLE IF EXISTS employees CASCADE;
 DROP TABLE IF EXISTS system_logs CASCADE;
 DROP TABLE IF EXISTS tickets CASCADE;
+DROP TABLE IF EXISTS ticket_messages CASCADE;
 
 CREATE TABLE employees (
     employee_id   SERIAL PRIMARY KEY,
@@ -23,7 +24,10 @@ CREATE TABLE subscribers (
     address       TEXT,
     phone_number  VARCHAR(20) UNIQUE NOT NULL,
     password_hash VARCHAR(255),
-    balance       NUMERIC(10, 2) NOT NULL DEFAULT 0.00
+    balance       NUMERIC(10, 2) NOT NULL DEFAULT 0.00,
+    email VARCHAR(255) UNIQUE,
+    is_confirmed BOOLEAN DEFAULT FALSE,
+    confirmation_token VARCHAR(255) UNIQUE
 );
 
 CREATE TABLE services (

@@ -58,6 +58,9 @@
             {% if request.state.user.role in ['Администратор', 'Менеджер'] %}
             <td>
                 <div class="d-flex">
+                    <a href="/contracts/{{ contract.contract_id }}/pdf" target="_blank" class="btn btn-sm btn-outline-secondary me-2" title="Скачать PDF">
+                        <i class="bi bi-file-earmark-pdf"></i>
+                    </a>
                 {% if contract.status == 'Ожидает активации' %}
                     <form action="/contracts/{{ contract.contract_id }}/update-status" method="post" class="me-2">
                         <input type="hidden" name="new_status" value="Активен">
