@@ -99,3 +99,15 @@ CREATE TRIGGER set_timestamp
 BEFORE UPDATE ON tickets
 FOR EACH ROW
 EXECUTE PROCEDURE trigger_set_timestamp();
+
+CREATE TABLE ticket_messages (
+    message_id SERIAL PRIMARY KEY,
+    ticket_id INTEGER NOT NULL REFERENCES tickets(ticket_id) ON DELETE CASCADE,
+    subscriber_id INTEGER REFERENCES subscribers(subscriber_id) ON DELETE SET NULL,
+    employee_id INTEGER REFERENCES employees(employee_id) ON DELETE SET NULL,
+    message_text TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT chk_author CHECK (subscriber_id IS NOT NULL OR employee_id IS NOT NULL)
+);
+
+CREATE INDEX idx_ticket_messages_ticket_id ON ticket_messages(ticket_id);

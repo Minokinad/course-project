@@ -9,20 +9,58 @@
 </div>
 
 <div class="row">
+    <!-- Левая колонка: Переписка и форма ответа -->
     <div class="col-md-7">
         <div class="card">
             <div class="card-header">
-                Детали заявки
+                Переписка по заявке
             </div>
-            <div class="card-body">
-                <h5 class="card-title">{{ ticket.title }}</h5>
-                <p class="card-text">{{ ticket.description|nl2br }}</p>
-                <hr>
-                <p><strong>Абонент:</strong> <a href="/subscribers/{{ ticket.subscriber_id }}">{{ ticket.subscriber_name }}</a></p>
-                <p><strong>Дата создания:</strong> {{ ticket.created_at.strftime('%d.%m.%Y в %H:%M') }}</p>
+            <div class="card-body" style="max-height: 500px; overflow-y: auto;">
+                <!-- Начальное сообщение -->
+                <div class="alert alert-secondary">
+                    <p class="mb-1"><strong>Тема: {{ ticket.title }}</strong></p>
+                    <p class="mb-1">{{ ticket.description|nl2br }}</p>
+                    <small class="text-muted">От <a href="/subscribers/{{ ticket.subscriber_id }}">{{ ticket.subscriber_name }}</a>, {{ ticket.created_at.strftime('%d.%m.%Y в %H:%M') }}</small>
+                </div>
+
+                {% for message in messages %}
+                    {% if message.employee_id %}
+                    <!-- Сообщение сотрудника (справа) -->
+                    <div class="d-flex justify-content-end mb-3">
+                        <div class="card bg-info text-dark" style="max-width: 80%;">
+                            <div class="card-body p-2">
+                                <p class="card-text small"><strong>{{ message.author_name }} (Вы):</strong><br>{{ message.message_text|nl2br }}</p>
+                                <small class="text-muted">{{ message.created_at.strftime('%d.%m %H:%M') }}</small>
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <!-- Сообщение абонента (слева) -->
+                    <div class="d-flex justify-content-start mb-3">
+                         <div class="card bg-light" style="max-width: 80%;">
+                            <div class="card-body p-2">
+                                <p class="card-text small"><strong>{{ message.author_name }}:</strong><br>{{ message.message_text|nl2br }}</p>
+                                <small class="text-muted">{{ message.created_at.strftime('%d.%m %H:%M') }}</small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                {% endfor %}
             </div>
+
+            {% if ticket.status != 'Закрыта' %}
+            <div class="card-footer">
+                <form action="/tickets/{{ ticket.ticket_id }}/add-message" method="post">
+                    <div class="input-group">
+                        <textarea name="message_text" class="form-control" placeholder="Введите ваш ответ..." rows="2" required></textarea>
+                        <button class="btn btn-primary" type="submit">Отправить</button>
+                    </div>
+                </form>
+            </div>
+            {% endif %}
         </div>
     </div>
+    <!-- Правая колонка: Управление заявкой -->
     <div class="col-md-5">
         <div class="card">
             <div class="card-header">

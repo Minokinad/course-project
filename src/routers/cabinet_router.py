@@ -1,19 +1,16 @@
 from fastapi import APIRouter, Request, Depends, Form
 from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.templating import Jinja2Templates
 
 from src.services import subscriber_auth_service, subscriber_service, contract_service, ticket_service
 from src.auth.dependencies import require_subscriber_login, get_current_subscriber
+from src.templating import templates
 
 router = APIRouter(prefix="/subscriber", tags=["Subscriber Cabinet"])
-templates = Jinja2Templates(directory="templates")
 
 
-# Главная страница кабинета (теперь это дашборд)
 @router.get("/cabinet", response_class=HTMLResponse, dependencies=[Depends(require_subscriber_login)])
 async def subscriber_cabinet_dashboard(request: Request, current_subscriber: dict = Depends(get_current_subscriber)):
     contracts = await contract_service.fetch_contracts_by_subscriber_id(current_subscriber['subscriber_id'])
-    # Обновляем данные абонента на случай, если баланс изменился
     subscriber_info = await subscriber_service.fetch_subscriber_by_id(current_subscriber['subscriber_id'])
 
     return templates.TemplateResponse("subscriber_cabinet.html", {
@@ -24,7 +21,6 @@ async def subscriber_cabinet_dashboard(request: Request, current_subscriber: dic
     })
 
 
-# Страница истории платежей
 @router.get("/payments", response_class=HTMLResponse, dependencies=[Depends(require_subscriber_login)])
 async def subscriber_payments_page(request: Request, current_subscriber: dict = Depends(get_current_subscriber)):
     payments = await subscriber_auth_service.get_subscriber_payments(current_subscriber['subscriber_id'])
@@ -35,7 +31,6 @@ async def subscriber_payments_page(request: Request, current_subscriber: dict = 
     })
 
 
-# Страница уведомлений
 @router.get("/notifications", response_class=HTMLResponse, dependencies=[Depends(require_subscriber_login)])
 async def subscriber_notifications_page(request: Request, current_subscriber: dict = Depends(get_current_subscriber)):
     notifications = await subscriber_auth_service.get_subscriber_notifications(current_subscriber['subscriber_id'])
@@ -121,3 +116,43 @@ async def create_ticket_action(
 ):
     await ticket_service.create_ticket(current_subscriber['subscriber_id'], title, description)
     return RedirectResponse(url="/subscriber/tickets", status_code=303)
+
+
+@router.get("/tickets/{ticket_id}", response_class=HTMLResponse, dependencies=[Depends(require_subscriber_login)])
+async def subscriber_ticket_detail_page(request: Request, ticket_id: int,
+                                        current_subscriber: dict = Depends(get_current_subscriber)):
+    ticket = await ticket_service.fetch_ticket_by_id(ticket_id)
+
+    # Проверка, что абонент смотрит свою заявку
+    if not ticket or ticket['subscriber_id'] != current_subscriber['subscriber_id']:
+        return RedirectResponse(url="/subscriber/tickets", status_code=404)
+
+    messages = await ticket_service.fetch_messages_for_ticket(ticket_id)
+
+    return templates.TemplateResponse("subscriber_ticket_detail.html", {
+        "request": request,
+        "ticket": ticket,
+        "messages": messages,
+        "active_page": "tickets"
+    })
+
+@router.post("/tickets/{ticket_id}/add-message")
+async def add_message_subscriber_action(
+    request: Request,
+    ticket_id: int,
+    current_subscriber: dict = Depends(get_current_subscriber),
+    message_text: str = Form(...)
+):
+    ticket = await ticket_service.fetch_ticket_by_id(ticket_id)
+    # Снова проверка на всякий случай
+    if not ticket or ticket['subscriber_id'] != current_subscriber['subscriber_id']:
+        return RedirectResponse(url="/subscriber/tickets", status_code=403)
+
+    if message_text.strip():
+         await ticket_service.add_message_to_ticket(
+            ticket_id=ticket_id,
+            message_text=message_text,
+            subscriber_id=current_subscriber['subscriber_id'],
+            user_login=f"subscriber_{current_subscriber['subscriber_id']}"
+        )
+    return RedirectResponse(url=f"/subscriber/tickets/{ticket_id}", status_code=303)

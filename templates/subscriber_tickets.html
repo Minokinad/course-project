@@ -16,7 +16,7 @@
         {% if tickets %}
         <div class="list-group">
             {% for ticket in tickets %}
-            <div class="list-group-item">
+            <a href="/subscriber/tickets/{{ ticket.ticket_id }}" class="list-group-item list-group-item-action">
                 <div class="d-flex w-100 justify-content-between">
                     <h5 class="mb-1">{{ ticket.title }}</h5>
                     <small>{{ ticket.created_at.strftime('%d.%m.%Y %H:%M') }}</small>
@@ -24,7 +24,7 @@
                 <p class="mb-1">{{ ticket.description|truncate(150) }}</p>
                 <div class="d-flex justify-content-between align-items-center">
                     <small>ID заявки: {{ ticket.ticket_id }}</small>
-                    <span class="badge 
+                    <span class="badge
                         {% if ticket.status == 'Новая' %}bg-primary
                         {% elif ticket.status == 'В работе' %}bg-warning text-dark
                         {% elif ticket.status == 'Закрыта' %}bg-secondary
@@ -32,7 +32,7 @@
                         {{ ticket.status }}
                     </span>
                 </div>
-            </div>
+            </a>
             {% endfor %}
         </div>
         {% else %}

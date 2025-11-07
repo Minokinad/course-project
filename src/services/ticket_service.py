@@ -105,3 +105,54 @@ async def update_ticket(ticket_id: int, status: str, assigned_to_id: Optional[in
         f"Статус заявки ID: {ticket_id} изменен на '{status}'. Назначен сотрудник ID: {assigned_to_id or 'не назначен'}.",
         user_login
     )
+
+async def fetch_messages_for_ticket(ticket_id: int):
+    """
+    Получает всю переписку по конкретной заявке.
+    """
+    conn = await get_db_connection()
+    query = """
+    SELECT
+        m.message_id,
+        m.message_text,
+        m.created_at,
+        m.subscriber_id,
+        m.employee_id,
+        -- Используем COALESCE, чтобы получить имя автора из нужной таблицы
+        COALESCE(s.full_name, e.name) as author_name
+    FROM ticket_messages m
+    LEFT JOIN subscribers s ON m.subscriber_id = s.subscriber_id
+    LEFT JOIN employees e ON m.employee_id = e.employee_id
+    WHERE m.ticket_id = $1
+    ORDER BY m.created_at ASC
+    """
+    messages = await conn.fetch(query, ticket_id)
+    await conn.close()
+    return messages
+
+
+async def add_message_to_ticket(ticket_id: int, message_text: str, user_login: str, subscriber_id: int = None, employee_id: int = None):
+    """
+    Добавляет новое сообщение в заявку.
+    """
+    conn = await get_db_connection()
+    # Обновляем поле updated_at у самой заявки, чтобы она "поднялась" в списке
+    async with conn.transaction():
+        await conn.execute(
+            """
+            INSERT INTO ticket_messages (ticket_id, subscriber_id, employee_id, message_text)
+            VALUES ($1, $2, $3, $4)
+            """,
+            ticket_id, subscriber_id, employee_id, message_text
+        )
+        await conn.execute(
+            "UPDATE tickets SET updated_at = NOW() WHERE ticket_id = $1",
+            ticket_id
+        )
+    await conn.close()
+    author_type = "Абонент" if subscriber_id else "Сотрудник"
+    await log_action(
+        "INFO",
+        f"{author_type} (ID: {subscriber_id or employee_id}) добавил сообщение в заявку ID: {ticket_id}.",
+        user_login
+    )
