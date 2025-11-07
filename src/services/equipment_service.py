@@ -2,12 +2,21 @@ from typing import Optional
 from src.db.connection import get_db_connection
 
 
-async def fetch_all_equipment():
+async def fetch_all_equipment(sort_by: Optional[str] = None, order: Optional[str] = 'asc'):
     """
     Получает список всего оборудования в системе.
     Если оборудование привязано к договору, также возвращает имя абонента.
     """
     conn = await get_db_connection()
+
+    allowed_sort_columns = {
+        "equipment_id": "e.equipment_id",
+        "type": "e.type",
+        "serial_number": "e.serial_number",
+        "status": "e.status",
+        "subscriber_name": "subscriber_name"
+    }
+
     query = """
     SELECT
         e.equipment_id, e.type, e.serial_number, e.status, e.contract_id,
@@ -15,11 +24,19 @@ async def fetch_all_equipment():
     FROM equipment e
     LEFT JOIN contracts c ON e.contract_id = c.contract_id
     LEFT JOIN subscribers s ON c.subscriber_id = s.subscriber_id
-    ORDER BY e.equipment_id
     """
+
+    order_by_clause = "ORDER BY e.equipment_id"  # Сортировка по умолчанию
+    if sort_by in allowed_sort_columns:
+        order_direction = "DESC" if order == 'desc' else "ASC"
+        order_by_clause = f"ORDER BY {allowed_sort_columns[sort_by]} {order_direction}"
+
+    query += f" {order_by_clause}"
+
     rows = await conn.fetch(query)
     await conn.close()
     return rows
+
 
 async def fetch_equipment_by_id(equipment_id: int):
     """
@@ -29,6 +46,7 @@ async def fetch_equipment_by_id(equipment_id: int):
     row = await conn.fetchrow("SELECT * FROM equipment WHERE equipment_id = $1", equipment_id)
     await conn.close()
     return row
+
 
 async def create_equipment(type: str, serial_number: str, status: str, contract_id: Optional[int]):
     """

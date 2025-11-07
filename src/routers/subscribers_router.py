@@ -1,7 +1,8 @@
 import json
 from datetime import date, datetime
+from typing import Optional
 
-from fastapi import APIRouter, Request, Form, Depends, UploadFile, File, HTTPException
+from fastapi import APIRouter, Request, Form, Depends, UploadFile, File, HTTPException, Query
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 
@@ -12,16 +13,21 @@ router = APIRouter(prefix="/subscribers", tags=["Subscribers"], dependencies=[De
 templates = Jinja2Templates(directory="templates")
 
 
-# ... (остальные эндпоинты без изменений)
 
 @router.get("", response_class=HTMLResponse)
-async def list_subscribers_page(request: Request):
-    subscribers = await subscriber_service.fetch_all_subscribers()
+async def list_subscribers_page(
+    request: Request,
+    sort_by: Optional[str] = Query(None),
+    order: Optional[str] = Query('asc')
+):
+    subscribers = await subscriber_service.fetch_all_subscribers(sort_by=sort_by, order=order)
     return templates.TemplateResponse("subscribers.html", {
         "request": request,
         "subscribers": subscribers,
         "active_page": "subscribers",
-        "message": request.query_params.get("message") # Для сообщений после импорта
+        "message": request.query_params.get("message"), # Для сообщений после импорта
+        "sort_by": sort_by,
+        "order": order
     })
 
 @router.post("/search", response_class=HTMLResponse)
@@ -88,34 +94,26 @@ async def delete_subscriber_htmx(request: Request, sub_id: int):
     result = await subscriber_service.delete_subscriber(sub_id, user_login=request.state.user_login)
 
     if result.get("error"):
-        # Если сервис вернул ошибку, отправляем HTML с сообщением и статусом 409 Conflict
         error_html = f"""
         <tr class="table-danger" hx-swap-oob="true" id="error-row-{sub_id}">
             <td colspan="6">{result['error']} <button class="btn btn-sm btn-link" onclick="this.closest('tr').remove()">OK</button></td>
         </tr>
         """
-        # Возвращаем пустой контент, но с OOB (Out-of-Band) свопом, чтобы вставить строку ошибки
         return HTMLResponse(content=f'<tr id="subscriber-row-{sub_id}">{error_html}</tr>', status_code=409)
 
-    # В случае успеха возвращаем пустой контент, HTMX удалит строку
     return HTMLResponse(content="", status_code=200)
 
 
-# --- Экспорт и Импорт ---
-
-# Вспомогательная функция для конвертации данных в JSON
 def json_converter(o):
     if isinstance(o, (datetime, date)):
         return o.isoformat()
-    return str(o) # На случай других типов
+    return str(o)
 
 @router.get("/export/json", dependencies=[Depends(require_admin)])
 async def export_subscribers_to_json():
     subscribers = await subscriber_service.fetch_all_subscribers()
-    # Преобразуем записи из БД в список словарей
     subscribers_list = [dict(sub) for sub in subscribers]
 
-    # Используем json.dumps с кастомным конвертером для дат
     json_data = json.dumps(subscribers_list, default=json_converter, indent=4, ensure_ascii=False)
 
     return JSONResponse(

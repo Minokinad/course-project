@@ -1,6 +1,8 @@
 from datetime import date
+from typing import Optional
 from src.db.connection import get_db_connection
 from src.services.log_service import log_action
+
 
 # ... (первые две функции без изменений)
 async def fetch_contracts_by_subscriber_id(subscriber_id: int):
@@ -20,11 +22,21 @@ async def fetch_contracts_by_subscriber_id(subscriber_id: int):
     return contracts
 
 
-async def fetch_all_contracts():
+async def fetch_all_contracts(sort_by: Optional[str] = None, order: Optional[str] = 'asc'):
     """
     Получает все договоры в системе с информацией об абонентах и услугах.
     """
     conn = await get_db_connection()
+
+    # Белый список для сортировки (используем псевдонимы)
+    allowed_sort_columns = {
+        "contract_id": "c.contract_id",
+        "subscriber_name": "subscriber_name",
+        "service_name": "service_name",
+        "start_date": "c.start_date",
+        "status": "c.status"
+    }
+
     query = """
     SELECT
         c.contract_id, c.start_date, c.status,
@@ -33,8 +45,15 @@ async def fetch_all_contracts():
     FROM contracts c
     JOIN services s ON c.service_id = s.service_id
     JOIN subscribers sub ON c.subscriber_id = sub.subscriber_id
-    ORDER BY c.start_date DESC
     """
+
+    order_by_clause = "ORDER BY c.start_date DESC"  # Сортировка по умолчанию
+    if sort_by in allowed_sort_columns:
+        order_direction = "DESC" if order == 'desc' else "ASC"
+        order_by_clause = f"ORDER BY {allowed_sort_columns[sort_by]} {order_direction}"
+
+    query += f" {order_by_clause}"
+
     contracts = await conn.fetch(query)
     await conn.close()
     return contracts
@@ -58,6 +77,7 @@ async def create_contract(subscriber_id: int, service_id: int, start_date: date,
         "INFO", f"Создан новый договор ID: {new_contract_id} для абонента ID: {subscriber_id}.", user_login
     )
 
+
 async def update_contract_status(contract_id: int, new_status: str, user_login: str):
     """
     Обновляет статус указанного договора.
@@ -65,7 +85,8 @@ async def update_contract_status(contract_id: int, new_status: str, user_login: 
     allowed_statuses = ['Активен', 'Приостановлен', 'Расторгнут']
     if new_status not in allowed_statuses:
         await log_action(
-            "WARNING", f"Попытка установить недопустимый статус '{new_status}' для договора ID: {contract_id}.", user_login
+            "WARNING", f"Попытка установить недопустимый статус '{new_status}' для договора ID: {contract_id}.",
+            user_login
         )
         return
 
@@ -88,6 +109,7 @@ async def fetch_all_subscribers_for_selection():
     rows = await conn.fetch("SELECT subscriber_id, full_name FROM subscribers ORDER BY full_name")
     await conn.close()
     return rows
+
 
 async def fetch_all_services_for_selection():
     """

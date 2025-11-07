@@ -67,21 +67,35 @@ async def export_report_to_excel(
     """
     payments_list = await report_service.get_all_payments_for_period(start_date, end_date)
 
-    # Создаем DataFrame из списка платежей
-    df = pd.DataFrame(payments_list)
+    # ДОБАВЬТЕ ЭТУ СТРОКУ, чтобы преобразовать записи в словари
+    payments_as_dicts = [dict(p) for p in payments_list]
 
-    # Переименовываем колонки для более читаемого отчета
+    # ИЗМЕНИТЕ ЭТУ СТРОКУ, чтобы она использовала список словарей
+    df = pd.DataFrame(payments_as_dicts)
+
     if not df.empty:
-        df = df.rename(columns={
-            'payment_id': 'ID Платежа',
-            'amount': 'Сумма',
-            'payment_date': 'Дата платежа',
-            'payment_method': 'Способ оплаты',
-            'subscriber_id': 'ID Абонента',
-            'subscriber_name': 'ФИО Абонента'
-        })
-        # Упорядочиваем колонки
-        df = df[['ID Платежа', 'Дата платежа', 'ФИО Абонента', 'ID Абонента', 'Сумма', 'Способ оплаты']]
+        df['payment_date'] = pd.to_datetime(df['payment_date']).dt.tz_localize(None)
+
+        if not df.empty:
+            # 1. Сначала задаем правильный порядок колонок с исходными именами
+            ordered_columns = [
+                'payment_id',
+                'payment_date',
+                'subscriber_name',
+                'subscriber_id',
+                'amount',
+                'payment_method'
+            ]
+            df = df[ordered_columns]
+
+            df = df.rename(columns={
+                'payment_id': 'ID Платежа',
+                'payment_date': 'Дата платежа',
+                'subscriber_name': 'ФИО Абонента',
+                'subscriber_id': 'ID Абонента',
+                'amount': 'Сумма',
+                'payment_method': 'Способ оплаты'
+            })
 
     # Создаем Excel-файл в памяти
     output = BytesIO()

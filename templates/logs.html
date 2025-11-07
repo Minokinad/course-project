@@ -10,9 +10,21 @@
 <table class="table table-sm table-striped">
     <thead>
     <tr>
-        <th style="width: 15%;">Время</th>
-        <th style="width: 10%;">Уровень</th>
-        <th style="width: 15%;">Пользователь</th>
+        {% macro sort_th(column, display_name, width) %}
+        <th style="width: {{ width }};">
+            {% set next_order = 'desc' if sort_by == column and order == 'asc' else 'asc' %}
+            <a href="?sort_by={{ column }}&order={{ next_order }}" class="text-decoration-none text-dark">
+                {{ display_name }}
+                {% if sort_by == column %}
+                    <i class="bi bi-arrow-{{ 'down' if order == 'asc' else 'up' }}"></i>
+                {% endif %}
+            </a>
+        </th>
+        {% endmacro %}
+
+        {{ sort_th('timestamp', 'Время', '15%') }}
+        {{ sort_th('level', 'Уровень', '10%') }}
+        {{ sort_th('user_login', 'Пользователь', '15%') }}
         <th>Сообщение</th>
     </tr>
     </thead>

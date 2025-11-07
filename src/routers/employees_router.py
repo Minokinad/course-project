@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Request, Depends, Form
+from typing import Optional
+from fastapi import APIRouter, Request, Depends, Form, Query
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
@@ -9,12 +10,18 @@ router = APIRouter(prefix="/employees", tags=["Employees"], dependencies=[Depend
 templates = Jinja2Templates(directory="templates")
 
 @router.get("", response_class=HTMLResponse)
-async def list_employees_page(request: Request):
-    employees = await employee_service.fetch_all_employees()
+async def list_employees_page(
+    request: Request,
+    sort_by: Optional[str] = Query(None),
+    order: Optional[str] = Query('asc')
+):
+    employees = await employee_service.fetch_all_employees(sort_by=sort_by, order=order)
     return templates.TemplateResponse("employees.html", {
         "request": request,
         "employees": employees,
-        "active_page": "employees"
+        "active_page": "employees",
+        "sort_by": sort_by,
+        "order": order
     })
 
 @router.get("/new", response_class=HTMLResponse)

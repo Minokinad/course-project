@@ -3,17 +3,32 @@ from src.db.connection import get_db_connection
 from src.services.auth_service import hash_password
 from src.services.log_service import log_action
 
-async def fetch_all_employees():
+
+async def fetch_all_employees(sort_by: Optional[str] = None, order: Optional[str] = 'asc'):
     conn = await get_db_connection()
-    rows = await conn.fetch("SELECT employee_id, name, email, login, role FROM employees ORDER BY name")
+
+    allowed_sort_columns = ["employee_id", "name", "email", "login", "role"]
+
+    query = "SELECT employee_id, name, email, login, role FROM employees"
+
+    if sort_by in allowed_sort_columns:
+        order_direction = "DESC" if order == 'desc' else "ASC"
+        query += f" ORDER BY {sort_by} {order_direction}"
+    else:
+        query += " ORDER BY name"  # Сортировка по умолчанию
+
+    rows = await conn.fetch(query)
     await conn.close()
     return rows
 
+
 async def fetch_employee_by_id(emp_id: int):
     conn = await get_db_connection()
-    row = await conn.fetchrow("SELECT employee_id, name, email, login, role FROM employees WHERE employee_id = $1", emp_id)
+    row = await conn.fetchrow("SELECT employee_id, name, email, login, role FROM employees WHERE employee_id = $1",
+                              emp_id)
     await conn.close()
     return row
+
 
 async def create_employee(name: str, email: str, login: str, password: str, role: str, user_login: str):
     hashed_pass = hash_password(password)
@@ -26,7 +41,8 @@ async def create_employee(name: str, email: str, login: str, password: str, role
     await log_action("INFO", f"Создан новый сотрудник '{name}' (логин: '{login}') с ролью '{role}'.", user_login)
 
 
-async def update_employee(emp_id: int, name: str, email: str, login: str, role: str, password: Optional[str], user_login: str):
+async def update_employee(emp_id: int, name: str, email: str, login: str, role: str, password: Optional[str],
+                          user_login: str):
     conn = await get_db_connection()
     if password:
         hashed_pass = hash_password(password)
@@ -51,4 +67,5 @@ async def delete_employee(emp_id: int, user_login: str):
     emp_info = await conn.fetchrow("SELECT login, name FROM employees WHERE employee_id = $1", emp_id)
     await conn.execute("DELETE FROM employees WHERE employee_id = $1", emp_id)
     await conn.close()
-    await log_action("WARNING", f"Удален сотрудник '{emp_info['name']}' (логин: '{emp_info['login']}', ID: {emp_id}).", user_login)
+    await log_action("WARNING", f"Удален сотрудник '{emp_info['name']}' (логин: '{emp_info['login']}', ID: {emp_id}).",
+                     user_login)

@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Request, Depends
+from typing import Optional
+from fastapi import APIRouter, Request, Depends, Query
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 
@@ -9,10 +10,16 @@ router = APIRouter(prefix="/logs", tags=["System Logs"], dependencies=[Depends(r
 templates = Jinja2Templates(directory="templates")
 
 @router.get("", response_class=HTMLResponse)
-async def system_logs_page(request: Request):
-    logs = await log_service.fetch_logs()
+async def system_logs_page(
+    request: Request,
+    sort_by: Optional[str] = Query(None),
+    order: Optional[str] = Query('desc')
+):
+    logs = await log_service.fetch_logs(sort_by=sort_by, order=order)
     return templates.TemplateResponse("logs.html", {
         "request": request,
         "logs": logs,
-        "active_page": "logs"
+        "active_page": "logs",
+        "sort_by": sort_by,
+        "order": order
     })

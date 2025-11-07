@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Request, Depends, Form
+from typing import Optional
+from fastapi import APIRouter, Request, Depends, Form, Query
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
@@ -10,15 +11,21 @@ templates = Jinja2Templates(directory="templates")
 
 
 @router.get("", response_class=HTMLResponse)
-async def list_equipment_page(request: Request):
+async def list_equipment_page(
+    request: Request,
+    sort_by: Optional[str] = Query(None),
+    order: Optional[str] = Query('asc')
+):
     """
     Отображает страницу со списком всего оборудования.
     """
-    equipment = await equipment_service.fetch_all_equipment()
+    equipment = await equipment_service.fetch_all_equipment(sort_by=sort_by, order=order)
     return templates.TemplateResponse("equipment.html", {
         "request": request,
         "equipment": equipment,
-        "active_page": "equipment"
+        "active_page": "equipment",
+        "sort_by": sort_by,
+        "order": order
     })
 
 @router.get("/new", response_class=HTMLResponse)

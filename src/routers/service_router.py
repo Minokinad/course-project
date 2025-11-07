@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Request, Depends, Form
+from typing import Optional
+from fastapi import APIRouter, Request, Depends, Form, Query
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
@@ -10,15 +11,21 @@ templates = Jinja2Templates(directory="templates")
 
 
 @router.get("", response_class=HTMLResponse)
-async def list_services_page(request: Request):
+async def list_services_page(
+    request: Request,
+    sort_by: Optional[str] = Query(None),
+    order: Optional[str] = Query('asc')
+):
     """
     Отображает страницу со списком всех доступных услуг.
     """
-    services = await service_service.fetch_all_services()
+    services = await service_service.fetch_all_services(sort_by=sort_by, order=order)
     return templates.TemplateResponse("services.html", {
         "request": request,
         "services": services,
-        "active_page": "services"
+        "active_page": "services",
+        "sort_by": sort_by,
+        "order": order
     })
 
 # --- Функции для администратора ---
